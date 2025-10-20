@@ -16,6 +16,9 @@ echo "=> Installing your eduroam infrastructure up-in-em!"
 echo "To abort installation: CTRL+C"
 echo "Begin installation..."
 
+#sudo apt-get update >/dev/null
+#sudo apt-get install -y git >/dev/null
+
 echo -e "\nChecking for previous installations of up-in-em..."
 UPINEM_PATH="$HOME/.local/share/upinem"
 if [ -d "$UPINEM_PATH" ]; then
@@ -27,6 +30,7 @@ if [ -d "$UPINEM_PATH" ]; then
             y)
                 echo "Uninstalling previous version..."
                 # TODO: run the uninstall script
+                rm -rf $UPINEM_PATH
                 break
                 ;;
             n | N)
@@ -40,7 +44,8 @@ if [ -d "$UPINEM_PATH" ]; then
     done
 fi
 
-# TODO: run uninstall.sh, delete previous installation, reinstall
+
+# TODO: git clone upinem
 #
 # TODO: check os version - only work with Ubuntu 24.04+
 #
