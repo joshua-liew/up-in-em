@@ -3,8 +3,8 @@
 set -e
 
 ascii_art='
-                     _                          
-  __  ______        (_)___        ___  ____ ___ 
+                     __                         
+  __  ______        /_/___        ___  ____ ___ 
  / / / / __ \______/ / __ \______/ _ \/ __ `__ \
 / /_/ / /_/ /_____/ / / / /_____/  __/ / / / / /
 \__,_/ .___/     /_/_/ /_/      \___/_/ /_/ /_/ 
@@ -16,10 +16,7 @@ echo "=> Installing your eduroam infrastructure up-in-em!"
 echo "To abort installation: CTRL+C"
 echo "Begin installation..."
 
-#sudo apt-get update >/dev/null
-#sudo apt-get install -y git >/dev/null
-
-echo -e "\nChecking for previous installations of up-in-em..."
+echo -e "\n* Checking for previous installations of up-in-em..."
 UPINEM_PATH="$HOME/.local/share/upinem"
 if [ -d "$UPINEM_PATH" ]; then
     echo "Previous installation of up-in-em detected at '$UPINEM_PATH'."
@@ -44,6 +41,11 @@ if [ -d "$UPINEM_PATH" ]; then
     done
 fi
 
+if ! command -v "git" >/dev/null; then
+    echo -e "* 'git' is required; installing 'git' as super-user (root)..."
+    sudo apt-get update >/dev/null
+    sudo apt-get install -y git >/dev/null
+fi
 
 # TODO: git clone upinem
 #
