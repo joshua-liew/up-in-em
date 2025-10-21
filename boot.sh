@@ -54,6 +54,13 @@ git clone $UPINEM_REPO $UPINEM_PATH >/dev/null && cd $UPINEM_PATH
 git fetch origin ${UPINEM_REF:-stable} && git checkout ${UPINEM_REF:-stable}
 cd - >/dev/null
 
-# TODO: check os version - only work with Ubuntu 24.04+
-#
+echo -e "\n* Checking your OS (up-in-em only works with Ubuntu 24.04+)..."
+if [ ! -f /etc/os-release ]; then
+    echo "Error: /etc/os-release not found. Unknown OS."
+    echo "Installation aborted."
+    exit 1
+fi
+source /etc/os-release
+# TODO: check if running ubuntu
+
 # TODO: make stdout more colorful!
