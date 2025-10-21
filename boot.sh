@@ -10,17 +10,17 @@ ascii_art='
 \__,_/ .___/     /_/_/ /_/      \___/_/ /_/ /_/ 
     /_/                                         
 '
-
 echo -e "$ascii_art"
-echo "=> Booting your pop-up eduroam infrastructure up-in-em!"
-echo "To abort the boot process, use CTRL+C."
-echo -e "Booting up the installation...\n"
+echo -e "An open source tool for your eduroam infrastructure needs\n"
+echo "[START] Begin the boot process."
+echo "[INFO] To abort the boot process, use CTRL+C."
+echo -e "Booting up the installation..."
 
 echo "* Checking for previous installations of up-in-em..."
 UPINEM_PATH="$HOME/.local/share/upinem"
 if [ -d "$UPINEM_PATH" ]; then
     echo "Previous installation of up-in-em detected at '$UPINEM_PATH'."
-    echo "To install up-in-em, you must uninstall any previous version."
+    echo "[WARN] To install up-in-em, you must uninstall any previous version."
     while true; do
         read -p "Enter 'y' to uninstall the previous installation: " var
         case $var in
@@ -31,8 +31,8 @@ if [ -d "$UPINEM_PATH" ]; then
                 break
                 ;;
             n | N)
-                echo "Installation aborted."
-                break
+                echo "[ABORT] Boot process aborted."
+                exit 1
                 ;;
             *)
                 echo "Invalid input. Please enter 'y' or 'n/N'."
@@ -56,26 +56,30 @@ cd - >/dev/null
 
 echo "* Checking your OS (up-in-em only works with Ubuntu 24.04+)..."
 if [ ! -f /etc/os-release ]; then
-    echo "Error: /etc/os-release not found. Unknown OS."
-    echo "Installation aborted."
+    echo "[FAIL] /etc/os-release not found. Unknown OS."
+    echo "Boot process aborted."
     exit 1
 fi
 source /etc/os-release
 if [ "$ID" != "ubuntu" ] || [ $(echo "$VERSION_ID >= 24.04" | bc) != 1 ]; then
-    echo "Error: Unsupported OS detected."
-    echo "You are currently running: $ID $VERSION_ID"
+    echo "[FAIL] Unsupported OS detected."
+    echo "Current OS: $ID $VERSION_ID"
     echo "OS required: Ubuntu 24.04 or higher."
+    echo "Boot process aborted."
     exit 1
 fi
 
 echo "* Checking your architecture (up-in-em only works on x86 architectures)..."
 ARCH=$(uname -m)
 if [ "$ARCH" != "x86_64" ] && [ "$ARCH" != "i686" ]; then
-    echo "Error: Unsupported architecture detected."
+    echo "[FAIL] Unsupported architecture detected."
     echo "Current architecture: $ARCH"
     echo "Architecture required: x86 architectures (x86_64 or i686)"
-    echo "Installation aborted."
+    echo "Boot process aborted."
     exit 1
 fi
 
+echo "[SUCCESS] Boot process for the installation was successful!"
+echo "[NOTE] Installation will begin in 3 seconds..."
+# TODO: source install script here (after 3 seconds)
 # TODO: make stdout more colorful!
