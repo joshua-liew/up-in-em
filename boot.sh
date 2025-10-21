@@ -61,6 +61,12 @@ if [ ! -f /etc/os-release ]; then
     exit 1
 fi
 source /etc/os-release
-# TODO: check if running ubuntu
+if [ "$ID" != "ubuntu" ] || [ $(echo "$VERSION_ID >= 24.04" | bc) != 1 ]; then
+    echo "Error: Incompatible OS detected."
+    echo "You are currently running: $ID $VERSION_ID"
+    echo "OS required: Ubuntu 24.04 or higher."
+    exit 1
+fi
+# TODO: Check architecture - only support x86
 
 # TODO: make stdout more colorful!
