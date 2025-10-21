@@ -67,6 +67,15 @@ if [ "$ID" != "ubuntu" ] || [ $(echo "$VERSION_ID >= 24.04" | bc) != 1 ]; then
     echo "OS required: Ubuntu 24.04 or higher."
     exit 1
 fi
-# TODO: Check architecture - only support x86
+
+echo "* Checking your architecture (up-in-em only works on x86 architectures)..."
+ARCH=$(uname -m)
+if [ "$ARCH" != "x86_64" ] && [ "$ARCH" != "i686" ]; then
+    echo "Error: Unsupported architecture detected."
+    echo "Current architecture: $ARCH"
+    echo "Architecture required: x86 architectures (x86_64 or i686)"
+    echo "Installation aborted."
+    exit 1
+fi
 
 # TODO: make stdout more colorful!
