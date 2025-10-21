@@ -12,11 +12,11 @@ ascii_art='
 '
 
 echo -e "$ascii_art"
-echo "=> Installing your eduroam infrastructure up-in-em!"
-echo "To abort installation: CTRL+C"
-echo "Booting up the installation..."
+echo "=> Booting your pop-up eduroam infrastructure up-in-em!"
+echo "To abort the boot process, use CTRL+C."
+echo -e "Booting up the installation...\n"
 
-echo -e "\n* Checking for previous installations of up-in-em..."
+echo "* Checking for previous installations of up-in-em..."
 UPINEM_PATH="$HOME/.local/share/upinem"
 if [ -d "$UPINEM_PATH" ]; then
     echo "Previous installation of up-in-em detected at '$UPINEM_PATH'."
@@ -42,19 +42,19 @@ if [ -d "$UPINEM_PATH" ]; then
 fi
 
 if ! command -v "git" >/dev/null; then
-    echo -e "* 'git' is required; installing 'git' as super-user (root)..."
+    echo "* 'git' is required; installing 'git' as super-user (root)..."
     sudo apt-get update >/dev/null
     sudo apt-get install -y git >/dev/null
 fi
 
-echo -e "* Cloning up-in-em repository..."
+echo "* Cloning up-in-em repository..."
 UPINEM_REPO="https://github.com/joshua-liew/up-in-em.git"
 git clone $UPINEM_REPO $UPINEM_PATH >/dev/null && cd $UPINEM_PATH
 # TODO: create stable branch & tags
 git fetch origin ${UPINEM_REF:-stable} && git checkout ${UPINEM_REF:-stable}
 cd - >/dev/null
 
-echo -e "\n* Checking your OS (up-in-em only works with Ubuntu 24.04+)..."
+echo "* Checking your OS (up-in-em only works with Ubuntu 24.04+)..."
 if [ ! -f /etc/os-release ]; then
     echo "Error: /etc/os-release not found. Unknown OS."
     echo "Installation aborted."
@@ -62,7 +62,7 @@ if [ ! -f /etc/os-release ]; then
 fi
 source /etc/os-release
 if [ "$ID" != "ubuntu" ] || [ $(echo "$VERSION_ID >= 24.04" | bc) != 1 ]; then
-    echo "Error: Incompatible OS detected."
+    echo "Error: Unsupported OS detected."
     echo "You are currently running: $ID $VERSION_ID"
     echo "OS required: Ubuntu 24.04 or higher."
     exit 1
