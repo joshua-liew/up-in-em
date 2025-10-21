@@ -14,7 +14,7 @@ ascii_art='
 echo -e "$ascii_art"
 echo "=> Installing your eduroam infrastructure up-in-em!"
 echo "To abort installation: CTRL+C"
-echo "Begin installation..."
+echo "Booting up the installation..."
 
 echo -e "\n* Checking for previous installations of up-in-em..."
 UPINEM_PATH="$HOME/.local/share/upinem"
@@ -47,8 +47,13 @@ if ! command -v "git" >/dev/null; then
     sudo apt-get install -y git >/dev/null
 fi
 
-# TODO: git clone upinem
-#
+echo -e "* Cloning up-in-em repository..."
+UPINEM_REPO="https://github.com/joshua-liew/up-in-em.git"
+git clone $UPINEM_REPO $UPINEM_PATH >/dev/null && cd $UPINEM_PATH
+# TODO: create stable branch & tags
+git fetch origin ${UPINEM_REF:-stable} && git checkout ${UPINEM_REF:-stable}
+cd - >/dev/null
+
 # TODO: check os version - only work with Ubuntu 24.04+
 #
 # TODO: make stdout more colorful!
