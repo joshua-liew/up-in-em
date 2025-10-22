@@ -79,6 +79,6 @@ git fetch origin ${UPINEM_REF:-stable} && git checkout ${UPINEM_REF:-stable}
 cd - >/dev/null
 
 echo "[ SUCCESS ] Boot process is complete!"
-echo "[ NOTE ] Installation will begin in 3 seconds..."
-# TODO: source install script here (after 3 seconds)
+echo "[ NOTE ] Installation will begin in 3 seconds..." && sleep 3
+source $UPINEM_PATH/install/install.sh
 # TODO: make stdout more colorful!
