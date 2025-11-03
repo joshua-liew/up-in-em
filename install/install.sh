@@ -74,7 +74,7 @@ echo "* Configuring vault..."
 echo "* Configuring environment for vault..."
 export VAULT_DATA=/opt/vault/data
 export VAULT_CONFIG=/etc/vault.d
-sudo mv ${GOPATH}/src/hashicorp/vault/bin/ /usr/bin
+sudo mv $(which vault) /usr/bin
 sudo setcap cap_ipc_lock=+ep $(readlink -f $(which vault))
 sudo mkdir -p ${VAULT_DATA}
 sudo mkdir -p ${VAULT_CONFIG}
