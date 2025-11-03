@@ -10,10 +10,7 @@ source $HOME/.local/share/upinem/install/_config.sh
 # Check architecture and OS
 source $INSTALL_DIR/_requirements.sh
 
-echo "* Cloning freeradius-server repository..."
 # TODO: install dependencies for FreeRADIUS
-# Clone the FreeRADIUS server repo
-git clone https://github.com/FreeRADIUS/freeradius-server.git $HOME/.local/src/freeradius-server
 sudo apt-get update >/dev/null
 # C compiler REQUIRED to build
 # To remove: `sudo apt-get purge build-essential`
@@ -27,10 +24,11 @@ sudo apt-get install -y libmemcached-dev >/dev/null #rlm_cache_memcached
 sudo apt-get install -y libhiredis-dev >/dev/null #rlm_cache_redis & rlm_redis
 sudo apt-get install -y libsqlite3-dev >/dev/null #rlm_sql_sqlite
 sudo apt-get install -y libgdbm-compat-dev >/dev/null #rlm_counter
+echo "* Cloning freeradius-server repository..."
+# Clone the FreeRADIUS server repo
+git clone https://github.com/FreeRADIUS/freeradius-server.git $HOME/.local/src/freeradius-server && cd $_
 # NOTE: building would be with the CLI tool
 echo "* [ START ] Building freeradius..."
-# Change to freeradius git repo
-cd $HOME/.local/src/freeradius-server
 # Switch branch do `git checkout <TAG_NAME>`
 # e.g. `git checkout release_3_2_8`
 git checkout release_3_2_8 >/dev/null
@@ -53,6 +51,15 @@ sudo add-apt-repository -y ppa:longsleep/golang-backports >/dev/null
 sudo apt-get update >/dev/null
 sudo apt-get install -y golang-go >/dev/null
 export GOPATH=$HOME/go
+export GOBIN=$HOME/go/bin
+export PATH=$GOBIN:$PATH
 echo -e "export GOPATH=$HOME/go" >> $HOME/.bashrc
+echo -e "export GOPATH=$GOBIN" >> $HOME/.bashrc
 # TODO: install Vault
+mkdir -p ${GOPATH}/src/hashicorp && cd $_
+git clone https://github.com/hashicorp/vault.git >/dev/null && cd vault
+# Dependencies for build process
+go get github.com/alvaroloes/enumer
+make bootstrap >/dev/null 2>&1
+make dev >/dev/null 2>&1
 # TODO: install CLI tool
