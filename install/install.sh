@@ -55,11 +55,27 @@ export GOBIN=$HOME/go/bin
 export PATH=$GOBIN:$PATH
 echo -e "export GOPATH=$HOME/go" >> $HOME/.bashrc
 echo -e "export GOPATH=$GOBIN" >> $HOME/.bashrc
+
 # TODO: install Vault
 mkdir -p ${GOPATH}/src/hashicorp && cd $_
-git clone https://github.com/hashicorp/vault.git >/dev/null && cd vault
 # Dependencies for build process
+echo "* Installing dependencies for freeradius..."
 go get github.com/alvaroloes/enumer
+echo "* Cloning vault repository..."
+# Clone the FreeRADIUS server repo
+git clone https://github.com/hashicorp/vault.git >/dev/null && cd vault
+echo "* [ START ] Building vault..."
 make bootstrap >/dev/null 2>&1
 make dev >/dev/null 2>&1
+echo "* [ SUCCESS ] Build process for vault is complete!"
+echo "* Configuring vault..."
+# https://developer.hashicorp.com/vault/docs/get-vault/install-binary
+# Step 1: Configure the environment
+export VAULT_DATA=/opt/vault/data
+export VAULT_CONFIG=/etc/vault.d
+sudo mv ${GOPATH}/src/hashicorp/vault/bin/ /usr/bin
+sudo setcap cap_ipc_lock=+ep $(readlink -f $(which vault))
+sudo mkdir -p ${VAULT_DATA}
+sudo mkdir -p ${VAULT_CONFIG}
+
 # TODO: install CLI tool
