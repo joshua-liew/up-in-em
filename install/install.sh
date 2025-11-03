@@ -47,5 +47,12 @@ sudo chown -R joshua:joshua $HOME/freeradius
 echo "* [ SUCCESS ] Build process for freeradius is complete!"
 
 # TODO: install dependencies for Vault
+# Golang is REQUIRED https://go.dev/wiki/Ubuntu
+# For uninstallation: use add-apt-repository with --remove option
+sudo add-apt-repository -y ppa:longsleep/golang-backports >/dev/null
+sudo apt-get update >/dev/null
+sudo apt-get install -y golang-go >/dev/null
+export GOPATH=$HOME/go
+echo -e "export GOPATH=$HOME/go" >> $HOME/.bashrc
 # TODO: install Vault
 # TODO: install CLI tool
