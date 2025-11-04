@@ -45,7 +45,7 @@ echo "* [ SUCCESS ] Build process for freeradius is complete!"
 # Configuration process
 # ----------------------------------------------------------
 
-cd -
+cd - >/dev/null
 # Step 1: Configure the environment
 echo "* Configuring environment for freeradius..."
 sudo mv ${FRAD_DIR}/bin/* /usr/local/sbin
