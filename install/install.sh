@@ -6,7 +6,6 @@ echo "[ START ] Begin installation."
 echo "[ INFO ] To abort the installation, use CTRL+C."
 
 # Source environment variables
-UPINEM_PATH=$HOME/.local/share/upinem
 source ${UPINEM_PATH}/install/_config.sh
 # Check architecture and OS
 source ${INSTALL_DIR}/_requirements.sh
@@ -15,7 +14,7 @@ source ${INSTALL_DIR}/_requirements.sh
 # Freeradius installation script(s)
 # --------------------------------------------------------------
 source ${INSTALL_DIR}/freeradius/_config-freeradius.sh
-source ${INSTALL_DIR}/freeradius/_install-freeradius.sh
+source ${INSTALL_DIR}/freeradius/install-freeradius.sh
 
 
 # TODO: install dependencies for Vault
