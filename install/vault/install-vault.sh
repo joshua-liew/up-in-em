@@ -11,6 +11,7 @@ echo "* Essential dependencies: golang"
 sudo add-apt-repository -y ppa:longsleep/golang-backports >/dev/null
 sudo apt-get update >/dev/null
 sudo apt-get install -y golang-go >/dev/null
+export PATH=${GOBIN}:$PATH
 
 
 # --------------------------------------------------------------
@@ -23,7 +24,7 @@ git clone https://github.com/hashicorp/vault.git ${VAULT_REPO_DIR} && cd $_
 
 echo "* [ START ] Building vault..."
 echo "* Installing golang modules..."
-go get github.com/alvaroloes/enumer
+go get github.com/alvaroloes/enumer >/dev/null
 # Step 1: Bootstrapping the installation
 echo "* Bootstrapping the build process..."
 make bootstrap >/dev/null 2>&1
