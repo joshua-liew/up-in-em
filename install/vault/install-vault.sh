@@ -32,3 +32,21 @@ make bootstrap >/dev/null 2>&1
 echo "* Building the vault binary..."
 make dev >/dev/null 2>&1
 echo "* [ SUCCESS ] Build process for vault is complete!"
+
+
+# --------------------------------------------------------------
+# Configuration process
+# --------------------------------------------------------------
+
+cd - >/dev/null
+# Step 1: Configure the environment
+echo "* Configuring environment for vault..."
+sudo mv ${GOBIN}/vault /usr/bin
+sudo setcap cap_ipc_lock=+ep $(readlink -f $(which vault))
+sudo mkdir -p ${VAULT_DATA}
+sudo mkdir -p ${VAULT_CONFIG}
+# Step 2: Configure user permissions
+echo "* Configuring user permissions for vault..."
+sudo useradd --system --home ${VAULT_DATA} --shell /sbin/nologin vault
+sudo chown vault:vault ${VAULT_DATA}
+sudo chmod -R 750 ${VAULT_DATA}
