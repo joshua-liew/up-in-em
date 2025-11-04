@@ -18,7 +18,6 @@ export PATH=${GOBIN}:$PATH
 # Build process
 # --------------------------------------------------------------
 
-#mkdir -p ${GOPATH}/src/hashicorp && cd $_
 echo "* Cloning vault repository..."
 git clone https://github.com/hashicorp/vault.git ${VAULT_REPO_DIR} && cd $_
 
@@ -28,7 +27,7 @@ go get github.com/alvaroloes/enumer >/dev/null
 # Step 1: Bootstrapping the installation
 echo "* Bootstrapping the build process..."
 make bootstrap >/dev/null 2>&1
-# Step 2: Install
+# Step 2: Build
 echo "* Building the vault binary..."
 make dev >/dev/null 2>&1
 echo "* [ SUCCESS ] Build process for vault is complete!"
@@ -41,7 +40,7 @@ echo "* [ SUCCESS ] Build process for vault is complete!"
 cd - >/dev/null
 # Step 1: Configure the environment
 echo "* Configuring environment for vault..."
-sudo mv ${GOBIN}/vault /usr/bin
+sudo mv ${GOBIN}/vault /usr/local/bin
 sudo setcap cap_ipc_lock=+ep $(readlink -f $(which vault))
 sudo mkdir -p ${VAULT_DATA}
 sudo mkdir -p ${VAULT_CONFIG}
