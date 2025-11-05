@@ -4,8 +4,10 @@ export FRAD_REPO_DIR=$HOME/.local/share/freeradius-server
 # Add according to the FHS
 export FRAD_DIR=/usr/local
 export FRAD_LOCALSTATE_DIR=/var
+export FRAD_LOG_DIR=${FRAD_LOCALSTATE_DIR}/log/freeradius
+export FRAD_RUN_DIR=/run/freeradius
 # Custom configuration: add to the config directory
-export FRAD_CONFIG_DIR=${CONFIG_DIR}/raddb
+export FRAD_CONFIG_DIR=${CONFIG_DIR}/freeradius
 # From ./configure --help:
 # Fine tuning of the installation directories:
 #  --bindir=DIR            user executables [EPREFIX/bin]
