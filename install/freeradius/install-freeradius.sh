@@ -52,6 +52,10 @@ sudo ldconfig
 # Step 2: Configure user permissions
 echo "* Configuring user permissions for freeradius..."
 sudo useradd --system --home ${FRAD_CONFIG_DIR} --shell /sbin/nologin freeradius
+sudo chown freeradius:freeradius -R ${FRAD_CONFIG_DIR}
+sudo mkdir -p ${FRAD_LOG_DIR}
+sudo mkdir -p ${FRAD_RUN_DIR}
 sudo chown freeradius:adm -R ${FRAD_LOG_DIR}
 sudo chown freeradius:freeradius -R ${FRAD_RUN_DIR}
-sudo chown freeradius:freeradius -R ${FRAD_CONFIG_DIR}
+sudo chmod -R 755 ${FRAD_LOG_DIR}
+sudo chmod -R 775 ${FRAD_RUN_DIR}
