@@ -75,7 +75,7 @@ fi
 UPINEM_REPO="https://github.com/joshua-liew/up-in-em.git"
 git clone $UPINEM_REPO $UPINEM_PATH >/dev/null && cd $UPINEM_PATH
 # TODO: create stable branch & tags
-git fetch origin ${UPINEM_REF:-install} && git switch ${UPINEM_REF:-install}
+git fetch origin ${UPINEM_REF:-main} && git switch ${UPINEM_REF:-main}
 cd - >/dev/null
 
 echo "[ SUCCESS ] Boot process is complete!"
