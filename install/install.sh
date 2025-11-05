@@ -24,7 +24,7 @@ source ${INSTALL_DIR}/freeradius/install-freeradius.sh
 
 
 # --------------------------------------------------------------
-# Freeradius installation script(s)
+# Vault installation script(s)
 # --------------------------------------------------------------
 source ${INSTALL_DIR}/vault/_config-vault.sh
 source ${INSTALL_DIR}/vault/install-vault.sh
