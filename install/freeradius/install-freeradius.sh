@@ -54,4 +54,5 @@ sudo mv $(which radiusd) /usr/local/bin
 # Step 2: Configure user permissions
 echo "* Configuring user permissions for freeradius..."
 sudo useradd --system --home ${FRAD_DIR} --shell /sbin/nologin freeradius
-sudo chown freeradius:freeradius ${FRAD_CONFIG_DIR}
+sudo usermod -aG freeradius $USER
+sudo chown freeradius:freeradius -R ${FRAD_CONFIG_DIR}
