@@ -57,5 +57,5 @@ sudo mkdir -p ${FRAD_LOG_DIR}
 sudo mkdir -p ${FRAD_RUN_DIR}
 sudo chown freeradius:adm -R ${FRAD_LOG_DIR}
 sudo chown freeradius:freeradius -R ${FRAD_RUN_DIR}
-sudo chmod -R 755 ${FRAD_LOG_DIR}
+sudo chmod -R 750 ${FRAD_LOG_DIR}
 sudo chmod -R 775 ${FRAD_RUN_DIR}
