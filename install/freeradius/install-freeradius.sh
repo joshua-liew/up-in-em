@@ -16,6 +16,8 @@ sudo apt-get install -y libmemcached-dev >/dev/null #rlm_cache_memcached
 sudo apt-get install -y libhiredis-dev >/dev/null #rlm_cache_redis,rlm_redis
 sudo apt-get install -y libsqlite3-dev >/dev/null #rlm_sql_sqlite
 sudo apt-get install -y libgdbm-compat-dev >/dev/null #rlm_counter
+# TODO: consider building libssl from source
+# https://github.com/openssl/openssl
 
 
 # --------------------------------------------------------------
