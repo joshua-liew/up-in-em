@@ -16,6 +16,8 @@ sudo apt-get install -y libmemcached-dev >/dev/null #rlm_cache_memcached
 sudo apt-get install -y libhiredis-dev >/dev/null #rlm_cache_redis,rlm_redis
 sudo apt-get install -y libsqlite3-dev >/dev/null #rlm_sql_sqlite
 sudo apt-get install -y libgdbm-compat-dev >/dev/null #rlm_counter
+# TODO: consider building libssl from source
+# https://github.com/openssl/openssl
 
 
 # --------------------------------------------------------------
@@ -57,5 +59,5 @@ sudo mkdir -p ${FRAD_LOG_DIR}
 sudo mkdir -p ${FRAD_RUN_DIR}
 sudo chown freeradius:adm -R ${FRAD_LOG_DIR}
 sudo chown freeradius:freeradius -R ${FRAD_RUN_DIR}
-sudo chmod -R 755 ${FRAD_LOG_DIR}
+sudo chmod -R 750 ${FRAD_LOG_DIR}
 sudo chmod -R 775 ${FRAD_RUN_DIR}
