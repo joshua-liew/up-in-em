@@ -1,0 +1,12 @@
+{
+  "common_name": "Upinem AOU",
+  "issuer_name": "root-ca",
+  "ttl": "87600h",
+  "organization": "Aomori University",
+  "country": "JP",
+  "province": "Aomori-ken",
+  "locality": "Aomori-shi",
+  "max_path_length": 1,
+  "key_bits": 4096,
+  "key_type": "rsa"
+}
