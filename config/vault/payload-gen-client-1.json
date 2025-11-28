@@ -1,0 +1,6 @@
+{
+  "common_name": "user1@example.com",
+  "alt_names": "user1@example.com",
+  "ip_sans": "192.168.1.200",
+  "ttl": "8760h"
+}
