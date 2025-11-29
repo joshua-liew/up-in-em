@@ -312,3 +312,180 @@ curl -s -H "X-Vault-Token: $VAULT_TOKEN" \
   --data @payload-url-int.json \
   $VAULT_ADDR/v1/pki_int/config/urls
 ```
+
+
+## Step 3 (Vault): Create Server Role & Generate Server Certificates
+
+0. On a standard installation of FreeRADIUS, test certificates are provided to test an EAP-TLS setup.
+Also provided is the configuration options used to create those test certificates.
+We can use the `server.cnf` file as a reference to create a role in Vault that issues server certificates.
+```
+[ ca ]
+default_ca		= CA_default
+
+[ CA_default ]
+dir			= ./
+certs			= $dir
+crl_dir			= $dir/crl
+database		= $dir/index.txt
+new_certs_dir		= $dir
+certificate		= $dir/server.pem
+serial			= $dir/serial
+crl			= $dir/crl.pem
+private_key		= $dir/server.key
+RANDFILE		= $dir/.rand
+name_opt		= ca_default
+cert_opt		= ca_default
+default_days		= 60
+default_crl_days	= 30
+default_md		= sha256
+preserve		= no
+policy			= policy_match
+copy_extensions		= copy
+
+[ policy_match ]
+countryName		= match
+stateOrProvinceName	= match
+organizationName	= match
+organizationalUnitName	= optional
+commonName		= supplied
+emailAddress		= optional
+
+[ policy_anything ]
+countryName		= optional
+stateOrProvinceName	= optional
+localityName		= optional
+organizationName	= optional
+organizationalUnitName	= optional
+commonName		= supplied
+emailAddress		= optional
+
+[ req ]
+prompt			= no
+distinguished_name	= server
+default_bits		= 2048
+input_password		= whatever
+output_password		= whatever
+#req_extensions		= v3_req
+
+[server]
+countryName		= FR
+stateOrProvinceName	= Radius
+localityName		= Somewhere
+organizationName	= Example Inc.
+emailAddress		= admin@example.org
+commonName		= "Example Server Certificate"
+
+[ v3_req ]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always,issuer:always
+
+#  This should be a host name of the RADIUS server.
+#  Note that the host name is exchanged in EAP *before*
+#  the user machine has network access.  So the host name
+#  here doesn't really have to match anything in DNS.
+[alt_names]
+DNS.1 = radius.example.com
+
+# NAIRealm from RFC 7585
+otherName.0 = 1.3.6.1.5.5.7.8.8;FORMAT:UTF8,UTF8:*.example.com
+```
+
+1. Create an API request payload (`payload-role-server.json`) containing the role information.
+    - `issuer_ref`: Points to the Intermediate CA you just imported, ensuring it signs all leaf certs.
+    - `allowed_domains`: Limits the hostnames that can be requested i.e. only `radius.example.com` and `example.com`.
+    - `cn_validations`: **CRITICAL**. Enforces that the CN must be a `hostname` (e.g., `radius.example.com`).
+    - `server_flag`: **CRITICAL**. `true` enables the required TLS Web Server Authentication extended key usage.
+    - `client_flag`: **Security**. `false` prevents the certificate from being misused for client authentication.
+    - `ext_key_usage`: Explicitly sets the necessary Extended Key Usage. For TLS Web Server Authentication use `"ServerAuth"`.
+    - `allowed_other_sans`: **CRITICAL**. This is required to allow the NAI Realm OID (1.3.6.1.5.5.7.8.8) seen in your server.cnf to be included in the server certificate.
+> API: [ \[POST\] /pki/roles/:name](https://developer.hashicorp.com/vault/api-docs/secret/pki#create-update-role)
+```
+{
+  "issuer_ref": "default",
+  "max_ttl": "26280h",
+  "allowed_domains": "radius.example.com, example.com",
+  "allow_subdomains": true,
+  "allow_bare_domains": true,
+  "allow_glob_domains": true,
+  "cn_validations": "hostname",
+  "require_cn": true,
+  "enforce_hostnames": true,
+  "server_flag": true,
+  "client_flag": false,
+  "key_usage": ["DigitalSignature", "KeyEncipherment"],
+  "ext_key_usage": ["ServerAuth"],
+  "allowed_other_sans": "1.3.6.1.5.5.7.8.8;UTF8:*",
+  "key_type": "rsa",
+  "key_bits": 4096,
+  "organization": "Aomori University",
+  "country": "JP",
+  "province": "Aomori-ken",
+  "locality": "Aomori-shi"
+}
+```
+
+2. Create a role named `eap-tls-server` to issue server certificates for EAP-TLS usage.
+> API: [ \[POST\] /pki/roles/:name](https://developer.hashicorp.com/vault/api-docs/secret/pki#create-update-role)
+```
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
+  --request POST \
+  --data @payload-role-server.json \
+  $VAULT_ADDR/v1/pki_int/roles/eap-tls-server \
+  | jq
+```
+
+3. Create an API request payload (`payload-gen-server.json`) to issue the server certificate.
+    - `common_name`: This must be the FQDN of your RADIUS server, matching the `hostname` constraint in the role.
+    - `alt_names`: Specifies the requested Subject Alternative Names, in a comma-delimited list. These can be host names or email addresses; they will be parsed into their respective fields. Ensures the FQDN is included as a DNS Subject Alternative Name (SAN), which is best practice for TLS validation.
+    - `ip_sans`: Replace this with the actual IP Address of your RADIUS server **if clients will connect via IP**.
+    - `other_sans`: **CRITICAL**. This directly includes the required NAI Realm SAN from your FreeRADIUS `server.cnf`, which the `eap-tls-server` role is configured to allow.
+> API: [ \[POST\] /pki/issue/:name](https://developer.hashicorp.com/vault/api-docs/secret/pki#generate-certificate-and-key)
+```
+{
+  "common_name": "radius.example.com",
+  "alt_names": "radius.example.com, upinem.example.com",
+  "ip_sans": "192.168.1.100",
+  "other_sans": "1.3.6.1.5.5.7.8.8;UTF8:*.example.com",
+  "ttl": "8760h",
+  "format": "pem_bundle"
+}
+```
+
+4. Issue the server certificate and save the details (certificate, private key, etc.) into a separate `result-server-cert.json` file.
+We will extract the necessary information from the json file with jq later on.
+> API: [ \[POST\] /pki/issue/:name](https://developer.hashicorp.com/vault/api-docs/secret/pki#generate-certificate-and-key)
+```
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
+  --request POST \
+  --data @payload-gen-server.json \
+  $VAULT_ADDR/v1/pki_int/issue/eap-tls-server \
+  | jq > result-server-cert.json
+```
+
+5. Extract the private key into `server.key`. Will be ported for use in FreeRADIUS.
+```
+jq -r '.data.private_key' result-server-cert.json > server.key
+```
+
+6. Extract the server certificate into `server.pem`. Will be ported for use in FreeRADIUS.
+```
+jq -r '.data.certificate' result-server-cert.json | \
+grep -E 'BEGIN CERTIFICATE|END CERTIFICATE|' | \
+awk '
+    BEGIN {cert_found=0}
+    /BEGIN CERTIFICATE/ { cert_found=1; print; next }
+    cert_found { print }
+    /END CERTIFICATE/ { exit }
+' > server.pem
+```
+
+7. Extract the CA chain into `ca.pem`.
+This contains the Intermediate and Root CAs for client trust.
+Will be ported for use in FreeRADIUS.
+```
+jq -r '.data.ca_chain[]' result-server-cert.json > ca.pem
+```
