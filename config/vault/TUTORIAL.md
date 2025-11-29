@@ -3,6 +3,75 @@
 
 ## Step 1 (Vault): Generate Root CA
 
+0. On the default installation of FreeRADIUS, test certificates for EAP-TLS are provided.
+These can be found within the `/etc/freeradius/certs` directory.
+Within that directory is the `ca.cnf` file, which contains the configuration used to generate the self-signed CA for the test certificates.
+Using this as a reference, we can go about generating the CA in Vault.
+> GitHub: [/raddb/certs/ca.cnf](https://github.com/FreeRADIUS/freeradius-server/blob/release_3_2_8/raddb/certs/ca.cnf)
+```
+[ ca ]
+default_ca		= CA_default
+
+[ CA_default ]
+dir			= ./
+certs			= $dir
+crl_dir			= $dir/crl
+database		= $dir/index.txt
+new_certs_dir		= $dir
+certificate		= $dir/ca.pem
+serial			= $dir/serial
+crl			= $dir/crl.pem
+private_key		= $dir/ca.key
+RANDFILE		= $dir/.rand
+name_opt		= ca_default
+cert_opt		= ca_default
+default_days		= 60
+default_crl_days	= 30
+default_md		= sha256
+preserve		= no
+policy			= policy_match
+crlDistributionPoints	= URI:http://www.example.org/example_ca.crl
+
+[ policy_match ]
+countryName		= match
+stateOrProvinceName	= match
+organizationName	= match
+organizationalUnitName	= optional
+commonName		= supplied
+emailAddress		= optional
+
+[ policy_anything ]
+countryName		= optional
+stateOrProvinceName	= optional
+localityName		= optional
+organizationName	= optional
+organizationalUnitName	= optional
+commonName		= supplied
+emailAddress		= optional
+
+[ req ]
+prompt			= no
+distinguished_name	= certificate_authority
+default_bits		= 2048
+input_password		= whatever
+output_password		= whatever
+x509_extensions		= v3_ca
+
+[certificate_authority]
+countryName		= FR
+stateOrProvinceName	= Radius
+localityName		= Somewhere
+organizationName	= Example Inc.
+emailAddress		= admin@example.org
+commonName		= "Example Certificate Authority"
+
+[v3_ca]
+subjectKeyIdentifier	= hash
+authorityKeyIdentifier	= keyid:always,issuer:always
+basicConstraints	= critical,CA:true
+crlDistributionPoints	= URI:http://www.example.org/example_ca.crl
+```
+
 1. Enable the `pki` secrets engine at `pki_root` path using the `sys/mounts` endpoint.
 The `pki_root` engine will be used to generate the Root CA & subsequently sign the Intermediate CA.  
 > API: [ \[POST\] /sys/mounts/:path](https://developer.hashicorp.com/vault/api-docs/system/mounts#enable-secrets-engine)
