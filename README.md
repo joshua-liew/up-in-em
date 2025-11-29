@@ -1,4 +1,7 @@
 # up-in-em: an open-source tool for eduroam
+
+(Note: upinem is still under active development)
+
 > origins of this repository name: 'pop-UP INfrastructure for EduroaM'
 
 Streamline the building of an eduroam infrastructure with EAP-TLS functionality. Comes packaged with a CLI tool that will make configuration, deployment, and other essential operations simple. Ideated in a fit of annoyance and built with love for all the wonderful people running eduroam all over the world.
