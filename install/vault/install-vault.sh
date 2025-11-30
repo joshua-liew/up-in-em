@@ -12,8 +12,8 @@ sudo add-apt-repository -y ppa:longsleep/golang-backports >/dev/null
 sudo apt-get update >/dev/null
 sudo apt-get install -y golang-go >/dev/null
 export PATH=${GOBIN}:$PATH
-# Install utilities
-sudo apt-get install jq
+# Install utilities to utilize Vault
+sudo apt-get install -y jq >/dev/null
 
 
 # --------------------------------------------------------------
