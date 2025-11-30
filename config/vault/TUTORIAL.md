@@ -319,6 +319,7 @@ curl -s -H "X-Vault-Token: $VAULT_TOKEN" \
 0. On a standard installation of FreeRADIUS, test certificates are provided to test an EAP-TLS setup.
 Also provided is the configuration options used to create those test certificates.
 We can use the `server.cnf` file as a reference to create a role in Vault that issues server certificates.
+> GitHub: [/raddb/certs/server.cnf](https://github.com/FreeRADIUS/freeradius-server/blob/release_3_2_8/raddb/certs/server.cnf)
 ```
 [ ca ]
 default_ca		= CA_default
@@ -488,4 +489,161 @@ This contains the Intermediate and Root CAs for client trust.
 Will be ported for use in FreeRADIUS.
 ```
 jq -r '.data.ca_chain[]' result-server-cert.json > ca.pem
+```
+
+
+## Step 4 (Vault): Create Client Role & Generate Client Certificates
+
+0. On a standard installation of FreeRADIUS, test certificates are provided to test an EAP-TLS setup.
+Also provided is the configuration options used to create those test certificates.
+We can use the `client.cnf` file as a reference to create a role in Vault that issues client certificates.
+> GitHub: [/raddb/certs/client.cnf](https://github.com/FreeRADIUS/freeradius-server/blob/release_3_2_8/raddb/certs/client.cnf)
+```
+[ ca ]
+default_ca		= CA_default
+
+[ CA_default ]
+dir			= ./
+certs			= $dir
+crl_dir			= $dir/crl
+database		= $dir/index.txt
+new_certs_dir		= $dir
+certificate		= $dir/ca.pem
+serial			= $dir/serial
+crl			= $dir/crl.pem
+private_key		= $dir/ca.key
+RANDFILE		= $dir/.rand
+name_opt		= ca_default
+cert_opt		= ca_default
+default_days		= 60
+default_crl_days	= 30
+default_md		= sha256
+preserve		= no
+policy			= policy_match
+
+[ policy_match ]
+countryName		= match
+stateOrProvinceName	= match
+organizationName	= match
+organizationalUnitName	= optional
+commonName		= supplied
+emailAddress		= optional
+
+[ policy_anything ]
+countryName		= optional
+stateOrProvinceName	= optional
+localityName		= optional
+organizationName	= optional
+organizationalUnitName	= optional
+commonName		= supplied
+emailAddress		= optional
+
+[ req ]
+prompt			= no
+distinguished_name	= client
+default_bits		= 2048
+input_password		= whatever
+output_password		= whatever
+
+[client]
+countryName		= FR
+stateOrProvinceName	= Radius
+localityName		= Somewhere
+organizationName	= Example Inc.
+emailAddress		= user@example.org
+commonName		= user@example.org
+```
+
+1. Create an API request payload (`payload-role-client.json`) for the role used to create client certificates.
+    - `issuer_ref`: Points to the Intermediate CA you just imported, ensuring it signs all leaf certs.
+    - `allowed_domains`: Constrains the domains to match the Intermediate CA's Name Constraints.
+    - `cn_validations`: **CRITICAL**. Forces the Common Name to be an email address (e.g., `user@example.com`).
+    - `client_flag`: **CRITICAL**. `true` enables the clientAuth Extended Key Usage used for client authentication.
+    - `server_flag`: **Security**. `false` prevents the client certificate from being misused to impersonate a server.
+    - `key_usage`: Standard usages (`"DigitalSignature"`, `"KeyAgreement"`) for client authentication, focusing on signature/key exchange.
+    - `ext_key_usage`: Specifies the exact EKU OID to be included in the certificate (e.g., `ClientAuth`).
+```
+{
+  "issuer_ref": "default",
+  "max_ttl": "26280h",
+  "allowed_domains": "example.com, example.org",
+  "allow_subdomains": true,
+  "allow_bare_domains": true,
+  "allow_glob_domains": false,
+  "cn_validations": "email",
+  "require_cn": true,
+  "enforce_hostnames": false,
+  "server_flag": false,
+  "client_flag": true,
+  "key_usage": ["DigitalSignature", "KeyAgreement"],
+  "ext_key_usage": ["ClientAuth"],
+  "key_type": "rsa",
+  "key_bits": 4096,
+  "organization": "Aomori University",
+  "country": "JP",
+  "province": "Aomori-ken",
+  "locality": "Aomori-shi"
+}
+```
+
+2. Create a role named `eap-tls-client` to issue client certificates for EAP-TLS usage.
+> API: [ \[POST\] /pki/roles/:name](https://developer.hashicorp.com/vault/api-docs/secret/pki#create-update-role)
+```
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
+  --request POST \
+  --data @payload-role-client.json \
+  $VAULT_ADDR/v1/pki_int/roles/eap-tls-client \
+  | jq
+```
+
+3. Create payloads for the client certificates to be issued for EAP-TLS usage.
+In this example, I create 2 payloads one with different common names.
+> API: [ \[POST\] /pki/issue/:name](https://developer.hashicorp.com/vault/api-docs/secret/pki#generate-certificate-and-key)
+```
+# payload-gen-client-1.json
+{
+  "common_name": "user1@example.com",
+  "alt_names": "user1@example.com",
+  "ip_sans": "192.168.1.200",
+  "ttl": "8760h"
+}
+
+# payload-gen-client-2.json
+{
+  "common_name": "user2@example.org",
+  "alt_names": "user2@example.org",
+  "ip_sans": "192.168.1.201",
+  "ttl": "8760h"
+}
+```
+
+4. Issue the client certificate and save the details (certificate, private key, etc.) into a separate json files.
+We will extract the necessary information from the json file with jq later on.
+> API: [ \[POST\] /pki/issue/:name](https://developer.hashicorp.com/vault/api-docs/secret/pki#generate-certificate-and-key)
+```
+# Create client cert with CN 'user1@example.com'
+curl --header "X-Vault-Token: $VAULT_TOKEN" \
+  --request POST \
+  --data @payload-gen-client-1.json \
+  $VAULT_ADDR/v1/pki_int/issue/eap-tls-client \
+  | jq > result-client-1.json
+
+# Create client cert with CN 'user2@example.com'
+curl --header "X-Vault-Token: $VAULT_TOKEN" \
+  --request POST \
+  --data @payload-gen-client-2.json \
+  $VAULT_ADDR/v1/pki_int/issue/eap-tls-client \
+  | jq > result-client-2.json
+```
+
+5. Extract the necessary information (certificate & private key) from the json files.
+> You can use `jq -r '.data.ca_chain[]' result-client-1.json > client-1-ca.pem` to extract the CA chain.
+> However this is unnecessary as the CA chain of the server certificate is identical to those of the client certificates.
+> Using the CA chain of the server certificate will suffice.
+```
+jq -r '.data.private_key' result-client-1.json > client-1.key
+jq -r '.data.certificate' result-client-1.json > client-1.pem
+
+jq -r '.data.private_key' result-client-2.json > client-2.key
+jq -r '.data.certificate' result-client-2.json > client-2.pem
 ```
