@@ -647,3 +647,231 @@ jq -r '.data.certificate' result-client-1.json > client-1.pem
 jq -r '.data.private_key' result-client-2.json > client-2.key
 jq -r '.data.certificate' result-client-2.json > client-2.pem
 ```
+
+
+## Step 5 (FreeRADIUS): Configure EAP-TLS & Proxy Settings
+
+1. Remove the default EAP module.
+```
+sudo rm /etc/freeradius/mods-enabled/eap
+```
+
+2. Create a new EAP module (`upinem-eap.conf`) with minimum necessary settings configured for EAP-TLS.
+Save the EAP module to the `/etc/freeradius/mods-available` directory where modules are defined.
+**Required** to set the proper permissions so that the FreeRADIUS process can eventually read the module config.
+    - `private_key_file`: Point to the private key (.key) of the server certificate created above (i.e. `server.key` in Step 3).
+    - `certificate_file`: Point to the server certificate (.pem) created above (i.e. `server.pem` in Step 3)
+    - `ca_file`: Point to the CA chain file created above (i.e. `ca.pem` in Step 3)
+    - `private_key_password`: **Comment out**. Redundant to encrypt private_key_file; unnecessary.
+> GitHub: [upinem/mods-available/upinem-eap.conf](https://github.com/joshua-liew/up-in-em/blob/main/config/freeradius/upinem-mods-available/upinem-eap.conf)
+```
+##
+## upinem-eap.conf -- UPINEM EAP module
+##   configuration file for FreeRADIUS - 3.2.*
+##
+## Find out more about UPINEM below.
+## https://github.com/joshua-liew/up-in-em
+
+######################################################################
+
+eap {
+    default_eap_type = tls
+    timer_expire = 60
+    ignore_unknown_eap_types = no
+    max_sessions = ${max_requests}
+
+    # Common TLS configuration for TLS-based EAP types
+    tls-config tls-common {
+        #private_key_password = whatever
+        private_key_file = ${certdir}/server.key
+
+        certificate_file = ${certdir}/server.pem
+        ca_file = ${cadir}/ca.pem
+        ca_path = ${cadir}
+        auto_chain = yes
+
+        # check_cert_issuer = "<CERT_ISSUER>"
+        # check_cert_cn = %{User-Name}
+
+        cipher_list = "DEFAULT"
+        cipher_server_preference = no
+
+        tls_min_version = "1.2"
+        tls_max_version = "1.2"
+        ecdh_curve = ""
+    }
+
+    # EAP-TLS configuration
+    tls {
+        tls = tls-common
+        #virtual_server = check-eap-tls
+    }
+}
+```
+
+3. Enable the `upinem-eap` module created. Symbolic links are used for this purpose.
+```
+sudo ln -lr /etc/freeradius/mods-available/upinem-eap.conf /etc/freeradius/mods-enabled/upinem-eap
+
+# You may need to set permissions for the symbolic link.
+sudo chown freeradius:freeradius -h /etc/freeradius/mods-enabled/upinem-eap
+```
+
+4. Add the following `realms` to the `proxy.file` to ensure that the corresponding EAP identities are handled locally.
+Any empty realm or realm with no server pool specified causes packets to be processed locally.
+These realms must correspond to the CN constraints (`allowed_domains`, `allow_subdomains`, etc.) for client authentication in EAP-TLS set in Step 4.
+```
+realm example.com {
+}
+
+realm example.org {
+}
+```
+
+5. Run the FreeRADIUS server in debug mode.
+You should be able to confirm that your custom EAP module was successfully loaded.
+```
+sudo -u freeradius radiusd -X
+FreeRADIUS Version 3.2.8
+...
+Starting - reading configuration files ...
+...
+including configuration file /etc/freeradius/mods-enabled/upinem-eap
+...
+radiusd: #### Instantiating modules ####
+...
+  # Loaded module rlm_eap
+  # Loading module "eap" from file /etc/freeradius/mods-enabled/upinem-eap
+  eap {
+        default_eap_type = "tls"
+        timer_expire = 60
+        max_eap_type = 52
+        ignore_unknown_eap_types = no
+        cisco_accounting_username_bug = no
+        max_sessions = 16384
+        dedup_key = ""
+  }
+...
+  # Instantiating module "eap" from file /etc/freeradius/mods-enabled/upinem-eap
+   # Linked to sub-module rlm_eap_tls
+   tls {
+        tls = "tls-common"
+   }
+   tls-config tls-common {
+        verify_depth = 0
+        ca_path = "/etc/freeradius/certs"
+        pem_file_type = yes
+        private_key_file = "/etc/freeradius/certs/server.key"
+        certificate_file = "/etc/freeradius/certs/server.pem"
+        ca_file = "/etc/freeradius/certs/ca.pem"
+        fragment_size = 1024
+        include_length = yes
+        auto_chain = yes
+        check_crl = no
+        check_all_crl = no
+        ca_path_reload_interval = 0
+        cipher_list = "DEFAULT"
+        cipher_server_preference = no
+        reject_unknown_intermediate_ca = no
+        ecdh_curve = ""
+        tls_max_version = "1.2"
+        tls_min_version = "1.2"
+    cache {
+        enable = no
+        lifetime = 24
+        max_entries = 255
+    }
+    verify {
+        skip_if_ocsp_ok = no
+    }
+    ocsp {
+        enable = no
+        override_cert_url = no
+        use_nonce = yes
+        timeout = 0
+        softfail = no
+    }
+   }
+...
+```
+
+6. Create an eapol test file to conduct testing. Use the client certificates generated in Step 4.
+> You can install the `eapol_test` tool with apt-get: `sudo apt-get install eapoltest`
+```
+# test-client-1.conf
+network={
+        ssid="test"
+        key_mgmt=WPA-EAP
+        eap=TLS
+        identity="user1@example.com"
+        ca_cert="/tmp/certs/ca.pem"
+        client_cert="/tmp/certs/clients/client-1.pem"
+        private_key="/tmp/certs/clients/client-1.key"
+        eapol_flags=3
+}
+```
+
+7. With `radiusd -X` running in one terminal, open another terminal and perform the eapol test.
+You should see a `SUCCESS` message in the terminal.
+```
+eapol_test -c test-client-1.conf -s testing123
+
+# Example output below
+Reading configuration file 'test-client-1.conf'
+Line: 1 - start of a new network block
+ssid - hexdump_ascii(len=4):
+     74 65 73 74                                       test
+key_mgmt: 0x1
+eap methods - hexdump(len=16): 00 00 00 00 0d 00 00 00 00 00 00 00 00 00 00 00
+identity - hexdump_ascii(len=21):
+     ...    user1@example.com
+ca_cert - hexdump_ascii(len=17):
+     ...    /tmp/certs/ca.pem
+client_cert - hexdump_ascii(len=31):
+     ...    /tmp/certs/clients/client-1.pem
+private_key - hexdump_ascii(len=31):
+     ...    /tmp/certs/clients/client-1.key
+Priority group 0
+   id=0 ssid='test'
+...
+MPPE keys OK: 1  mismatch: 0
+SUCCESS
+```
+
+8. Within the FreeRADIUS debug output you should be able to confirm that EAP-TLS with certificates generated by Vault is successful.
+Many TLS attributes correspond to the values of parameters set between Step 1 - 4.
+You should see `Sent Access-Accept` logged within the output.
+```
+...
+(9) eap_tls:   TLS-Cert-Serial := "5b477fe9fd13eeed3b043572ce23fa3a4f0d80d0"
+(9) eap_tls:   TLS-Cert-Expiration := "301126100938Z"
+(9) eap_tls:   TLS-Cert-Valid-Since := "251127100908Z"
+(9) eap_tls:   TLS-Cert-Subject := "/C=JP/ST=Aomori-ken/L=Aomori-shi/O=Aomori University/CN=Upinem AOU Intermediate CA"
+(9) eap_tls:   TLS-Cert-Issuer := "/C=JP/ST=Aomori-ken/L=Aomori-shi/O=Aomori University/CN=Upinem AOU"
+(9) eap_tls:   TLS-Cert-Common-Name := "Upinem AOU Intermediate CA"
+(9) eap_tls:   TLS-Cert-CRL-Distribution-Points += "http://127.0.0.1:8200/v1/pki_root/crl"
+(9) eap_tls: (TLS) TLS - Creating attributes from certificate 1 in chain
+(9) eap_tls:   TLS-Client-Cert-Serial := "084cf7653d49b706801c38f820125ace298a1788"
+(9) eap_tls:   TLS-Client-Cert-Expiration := "261128072323Z"
+(9) eap_tls:   TLS-Client-Cert-Valid-Since := "251128072254Z"
+(9) eap_tls:   TLS-Client-Cert-Subject := "/C=JP/ST=Aomori-ken/L=Aomori-shi/O=Aomori University/CN=user1@sub.example.com"
+(9) eap_tls:   TLS-Client-Cert-Issuer := "/C=JP/ST=Aomori-ken/L=Aomori-shi/O=Aomori University/CN=Upinem AOU Intermediate CA"
+(9) eap_tls:   TLS-Client-Cert-Common-Name := "user1@example.com"
+(9) eap_tls:   TLS-Client-Cert-CRL-Distribution-Points += "http://127.0.0.1:8200/v1/pki_int/crl"
+(9) eap_tls:   TLS-Client-Cert-Subject-Alt-Name-Email := "user1@example.com"
+(9) eap_tls:   TLS-Client-Cert-X509v3-Extended-Key-Usage += "TLS Web Client Authentication"
+(9) eap_tls:   TLS-Client-Cert-X509v3-Subject-Key-Identifier += "DD:3B:59:A3:E2:AD:B3:0D:F2:42:9F:83:39:F4:59:71:51:F2:7F:6A"
+(9) eap_tls:   TLS-Client-Cert-X509v3-Authority-Key-Identifier += "7C:CE:86:95:50:B8:E5:DE:1F:40:1D:AE:C3:0B:55:72:C2:7A:1D:7F"
+(9) eap_tls:   TLS-Client-Cert-X509v3-Extended-Key-Usage-OID += "1.3.6.1.5.5.7.3.2"
+...
+(10) Sent Access-Accept Id 10 from 127.0.0.1:1812 to 127.0.0.1:60161 length 189
+(10)   MS-MPPE-Recv-Key = 0x7447441801becf79d243bf3d08df60dd307bebcbd756fb4f8e0fdfcec7a82207
+(10)   MS-MPPE-Send-Key = 0xc6b811229731c1e2f6ecde0fbcf03bed01237456b03c90dbe90329bec1ce845e
+(10)   EAP-Message = 0x03e90004
+(10)   Message-Authenticator = 0x00000000000000000000000000000000
+(10)   User-Name = "user1@example.com"
+(10)   Framed-MTU += 1014
+(10) Finished request
+```
+
+Congratulations. You have successfully configured FreeRADIUS to perform EAP-TLS authentication with certificates generated by Vault's PKI Secrets Engine.
