@@ -711,7 +711,7 @@ eap {
 
 3. Enable the `upinem-eap` module created. Symbolic links are used for this purpose.
 ```
-sudo ln -lr /etc/freeradius/mods-available/upinem-eap.conf /etc/freeradius/mods-enabled/upinem-eap
+sudo ln -sr /etc/freeradius/mods-available/upinem-eap.conf /etc/freeradius/mods-enabled/upinem-eap
 
 # You may need to set permissions for the symbolic link.
 sudo chown freeradius:freeradius -h /etc/freeradius/mods-enabled/upinem-eap
