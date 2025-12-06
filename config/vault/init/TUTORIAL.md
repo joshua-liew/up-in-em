@@ -87,3 +87,65 @@ curl -s $VAULT_ADDR/v1/sys/seal-status | jq
   "storage_type": "inmem"
 }
 ```
+
+
+## Step 2: Initalize & Unseal the Vault Server
+
+With the server running in the background/another terminal, execute the following to initialize and unseal.
+
+1. Create an API request payload (`payload-init.json`) to initialize the server.
+    - `secret_shares`: Specifies the number of shares to split the root key into.
+    - `secret_threshold`: Specifies the number of shares required to reconstruct the root key. This must be less than or equal `secret_shares`.
+> API: [ \[POST\] `/sys/init`](https://developer.hashicorp.com/vault/api-docs/system/init)
+```
+{
+  "secret_shares": 1,
+  "secret_threshold": 1
+}
+```
+
+2. Send a POST request to the `/sys/init` endpoint to initalize a new Vault server.
+Save the results into a json file to extract the necessary items later.
+> API: [ \[POST\] `/sys/init`](https://developer.hashicorp.com/vault/api-docs/system/init)
+```
+curl --request POST \
+  --data @payload-init.json \
+  $VAULT_ADDR/v1/sys/init \
+  | jq > result-init.json
+```
+
+3. Extract the root token and the server's unseal key. We will setup the server with root access initially.
+Eventually we will enable a separate auth method and perform operations as a dedicated user.
+```
+jq -r ".root_token" result-init.json > .vault_token
+jq -r ".keys[]" result-init.json > .vault_unseal_key
+```
+
+4. Create an API request payload (`payload-unseal.json`) to unseal the server.
+> API: [ \[POST\] `/sys/unseal`](https://developer.hashicorp.com/vault/api-docs/system/unseal)
+```
+tee payload-unseal.json <<EOF
+{
+  "key": "$(cat .vault_unseal_key)"
+}
+EOF
+```
+
+5. Unseal the Vault server at the `/sys/unseal` endpoint.
+> API: [ \[POST\] `/sys/unseal`](https://developer.hashicorp.com/vault/api-docs/system/unseal)
+```
+curl -s --request POST \
+  --data @payload-unseal.json \
+  $VAULT_ADDR/v1/sys/unseal | jq
+
+# Example output
+{
+  "sealed": false,
+  "t": 3,
+  "n": 5,
+  "progress": 0,
+  "version": "0.6.2",
+  "cluster_name": "vault-cluster-d6ec3c7f",
+  "cluster_id": "3e8b3fec-3749-e056-ba41-b62a63b997e8"
+}
+```
