@@ -227,7 +227,7 @@ openssl rand -base64 32 > .vault_auth
 To allow this user to operate the pki engines, grant this user the `pki` policy which we will define later.
 > API: [ \[POST\] `/auth/userpass/users/:username`](https://developer.hashicorp.com/vault/api-docs/auth/userpass#create-update-user)
 ```
-tee payload-auth-create.json >>EOF
+tee payload-auth-create.json <<EOF
 {
   "password": "$(cat .vault_auth)",
   "token_policies": ["pki", "default"]
