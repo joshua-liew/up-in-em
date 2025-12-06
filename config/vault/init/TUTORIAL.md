@@ -149,3 +149,53 @@ curl -s --request POST \
   "cluster_id": "3e8b3fec-3749-e056-ba41-b62a63b997e8"
 }
 ```
+
+
+## Step 3: Enable the Secret Engines (with Root Token)
+
+In this tutorial, we will create 2 PKI Secrets Engine(s) with the root token.
+
+1. Set the `VAULT_TOKEN` environment variable with the root token.
+    > NOTE: we will eventually assign this variable with a user token later on.  
+    > WARNING: DO NOT use the root token for everything. The root token is like `sudo` privilege for Linux systems.
+```
+# .vault_token stores the root token currently (Step 2.3)
+
+export VAULT_TOKEN=$(cat .vault_token)
+```
+
+2. Enable the first PKI Secrets Engine at the path `pki_root`.
+> API: [ \[POST\] `/sys/mounts/:path`](https://developer.hashicorp.com/vault/api-docs/system/mounts#enable-secrets-engine)
+```
+curl --header "X-Vault-Token: $VAULT_TOKEN" \
+   --request POST \
+   --data '{"type":"pki", "description":"Root CA (upinem)"}' \
+   $VAULT_ADDR/v1/sys/mounts/pki_root
+```
+
+3. Tune the `pki_root` engine.
+> API: [ \[POST\] `/sys/mounts/:path/tune`](https://developer.hashicorp.com/vault/api-docs/system/mounts#tune-mount-configuration)
+```
+curl --header "X-Vault-Token: $VAULT_TOKEN" \
+   --request POST \
+   --data '{"max_lease_ttl":"87600h"}' \
+   $VAULT_ADDR/v1/sys/mounts/pki_root/tune
+```
+
+4. Enable the second PKI Secrets Engine at the path `pki_int`.
+> API: [ \[POST\] `/sys/mounts/:path`](https://developer.hashicorp.com/vault/api-docs/system/mounts#enable-secrets-engine)
+```
+curl --header "X-Vault-Token: $VAULT_TOKEN" \
+  --request POST \
+  --data '{"type":"pki", "description":"Intermediate CA (upinem)"}' \
+  $VAULT_ADDR/v1/sys/mounts/pki_int
+```
+
+5. Tune the `pki_int` engine.
+> API: [ \[POST\] `/sys/mounts/:path/tune`](https://developer.hashicorp.com/vault/api-docs/system/mounts#tune-mount-configuration)
+```
+curl --header "X-Vault-Token: $VAULT_TOKEN" \
+  --request POST \
+  --data '{"max_lease_ttl":"43800h"}' \
+  $VAULT_ADDR/v1/sys/mounts/pki_int/tune
+```
