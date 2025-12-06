@@ -199,3 +199,127 @@ curl --header "X-Vault-Token: $VAULT_TOKEN" \
   --data '{"max_lease_ttl":"43800h"}' \
   $VAULT_ADDR/v1/sys/mounts/pki_int/tune
 ```
+
+
+## Step 4: Generate User Token & Attach Policy
+
+As the authentication method to Vault, we will be using the `userpass` method.
+The general workflow to work with Vault, is to \[authenticate\] -> \[retrieve token\] -> \[perform operation\].
+The userpass auth method allows users to authenticate with Vault using a username and password combination.
+> To read more about the Userpass auth method: [Userpass - Auth Methods | Vault | HashiCorp Developer](https://developer.hashicorp.com/vault/docs/auth/userpass)
+
+1. Enable the `userpass` authentication method.
+> API [ \[POST\] `/sys/auth/:path`](https://developer.hashicorp.com/vault/api-docs/system/auth#enable-auth-method)
+```
+curl \
+  --header "X-Vault-Token: $VAULT_TOKEN" \
+  --request POST \
+  --data '{"type":"userpass", "description":"Userpass auth (upinem)"}' \
+  ${VAULT_ADDR}/v1/sys/auth/userpass
+```
+
+2. We will create a random (base64) 32-byte long string as the password & store it for user authentication.
+```
+openssl rand -base64 32 > .vault_auth
+```
+
+3. Create an API request payload (`payload-auth-create.json`) to generate the user.
+To allow this user to operate the pki engines, grant this user the `pki` policy which we will define later.
+> API: [ \[POST\] `/auth/userpass/users/:username`](https://developer.hashicorp.com/vault/api-docs/auth/userpass#create-update-user)
+```
+tee payload-auth-create.json >>EOF
+{
+  "password": "$(cat .vault_auth)",
+  "token_policies": ["pki", "default"]
+}
+EOF
+```
+
+4. Create the user to authenticate with.
+> API: [ \[POST\] `/auth/userpass/users/:username`](https://developer.hashicorp.com/vault/api-docs/auth/userpass#create-update-user)
+```
+curl \
+    --header "X-Vault-Token: $VAULT_TOKEN" \
+    --request POST \
+    --data @payload-auth-create.json \
+    ${VAULT_ADDR}/v1/auth/userpass/users/${USER}
+```
+
+5. Create an API request payload (`payload-policy-pki.json`) to generate the policy.
+This policy is limited and allows users to only:
+    - List enabled secrets engine
+    - Work with pki secrets engine(s)
+> API: [ \[POST\] `/sys/policies/acl/:name`](https://developer.hashicorp.com/vault/api-docs/system/policies#create-update-acl-policy)
+```
+# payload-policy-pki.json
+{
+  "policy": "path \"sys/mounts\" {\n  capabilities = [\"read\", \"list\"]\n}\n\npath \"pki*\" {\n  capabilities = [\"create\", \"read\", \"update\", \"delete\", \"list\", \"sudo\", \"patch\"]\n}\n"
+}
+
+
+# in HCL format
+# List enabled secrets engine
+path "sys/mounts" {
+  capabilities = [ "read", "list" ]
+}
+
+# Work with pki secrets engine
+path "pki*" {
+  capabilities = [ "create", "read", "update", "delete", "list", "sudo", "patch" ]
+}
+```
+
+6. Create the policy.
+> API: [ \[POST\] `/sys/policies/acl/:name`](https://developer.hashicorp.com/vault/api-docs/system/policies#create-update-acl-policy)
+```
+curl \
+    --header "X-Vault-Token: $VAULT_TOKEN" \
+    --request POST \
+    --data @payload-policy-pki.json \
+    ${VAULT_ADDR}/v1/sys/policies/acl/pki
+```
+
+7. Perform some checks to see if things are working as intended.
+```
+# Retrieves information about the named ACL policy
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" \
+  $VAULT_ADDR/v1/sys/policies/acl/pki \
+  | jq -r ".data.policy"
+
+# List all the users
+curl \
+    --header "X-Vault-Token: ..." \
+    --request LIST \
+    ${VAULT_ADDR}/v1/auth/userpass/users
+
+# Check the generated user's info
+curl \
+    --header "X-Vault-Token: ..." \
+    ${VAULT_ADDR}/v1/auth/userpass/users/${USER}
+```
+
+8. Create an API request payload to login as the user with the `userpass` authentication method.
+> API: [ \[POST\] `/auth/userpass/login/:username`](https://developer.hashicorp.com/vault/api-docs/auth/userpass#login)
+```
+tee payload-auth-login.json <<EOF
+{
+  "password": "$(cat .vault_auth)"
+}
+EOF
+```
+
+9. Login as the user and store the user token in the `.vault_token` file, overwriting the root token.
+```
+curl -s \
+  -X POST \
+  --data @payload-auth-login.json  \
+  $VAULT_ADDR/v1/auth/userpass/login/${USER} \
+  | jq -r ".auth.client_token" > .vault_token
+```
+
+10. Overwrite the `VAULT_TOKEN` environment variable to perform operations as the user.
+```
+export VAULT_TOKEN="$(cat .vault_token)"
+```
+
+Congratulations. You have successfully automated the setup process of the Vault server.
