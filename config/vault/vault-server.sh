@@ -7,6 +7,12 @@ cluster_name            = "upinem-vault-server"
 disable_mlock           = true
 ui                      = false
 
+log_level               = "info"
+log_requests_level      = "info"
+log_format              = "standard"
+log_file                = "${VAULT_LOG}/vault.log"
+log_rotate_max_files    = "28"
+
 listener "tcp" {
 address       = "127.0.0.1:8200"
 tls_cert_file = "${VAULT_CONFIG}/vault-cert.pem"
