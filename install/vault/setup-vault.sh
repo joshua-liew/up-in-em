@@ -19,4 +19,12 @@ export VAULT_ADDR="https://127.0.0.1:8200"
 export VAULT_CACERT=${VAULT_CONFIG}/vault-cert.pem
 export CURL_CA_BUNDLE=$VAULT_CACERT
 
-# TODO: create systemd service file for Vault
+# Run the Vault binary as a process with systemd
+source ${VAULT_REPO_DIR}/config/vault/vault.service.sh
+sudo chmod 644 ./vault.service
+sudo chown root:root ./vault.service
+sudo mv ./vault.service /etc/systemd/system/
+# Reference: https://developer.hashicorp.com/vault/docs/deploy/run-as-service
+sudo systemctl daemon-reload
+sudo systemctl enable vault.service
+sudo systemctl start vault.service
