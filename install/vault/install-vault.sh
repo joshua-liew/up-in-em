@@ -44,10 +44,13 @@ cd - >/dev/null
 echo "* Configuring environment for vault..."
 sudo mv ${GOBIN}/vault /usr/local/bin
 sudo setcap cap_ipc_lock=+ep $(readlink -f $(which vault))
-sudo mkdir -p ${VAULT_DATA}
-sudo mkdir -p ${VAULT_CONFIG}
+sudo mkdir -p $VAULT_DATA
+sudo mkdir -p $VAULT_CONFIG
+sudo mkdir -p $VAULT_LOG
 # Step 2: Configure user permissions
 echo "* Configuring user permissions for vault..."
-sudo useradd --system --home ${VAULT_DATA} --shell /sbin/nologin vault
-sudo chown vault:vault ${VAULT_DATA}
-sudo chmod -R 750 ${VAULT_DATA}
+sudo useradd --system --home $VAULT_DATA --shell /sbin/nologin vault
+sudo chown vault:vault $VAULT_DATA
+sudo chmod -R 750 $VAULT_DATA
+sudo chown vault:adm $VAULT_LOG
+sudo chmod -R 750 $VAULT_LOG
