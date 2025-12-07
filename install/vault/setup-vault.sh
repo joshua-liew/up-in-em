@@ -40,8 +40,8 @@ export CURL_CA_BUNDLE=$VAULT_CACERT
 source ${VAULT_REPO_DIR}/config/vault/payload-init.sh
 curl --request POST --data @payload-init.json ${VAULT_ADDR}/v1/sys/init \
   | jq > result-init.json
-jq -r ".root_token" result-init.json > .vault_token
-jq -r ".keys[]" result-init.json > .vault_unseal_key
+jq -r ".root_token" result-init.json > $HOME/.vault_token
+jq -r ".keys[]" result-init.json > $HOME/.vault_unseal_key
 
 # Generate payload to unseal
 source ${VAULT_REPO_DIR}/config/vault/payload-unseal.sh
@@ -52,7 +52,7 @@ curl -s --request POST --data @payload-unseal.json ${VAULT_ADDR}/v1/sys/unseal |
 # Enable PKI Secret Engine(s)
 # --------------------------------------------------------------
 
-export VAULT_TOKEN=$(cat .vault_token) # WARNING: ROOT TOKEN
+export VAULT_TOKEN=$(cat $HOME/.vault_token) # WARNING: ROOT TOKEN
 
 # PKI engine for Root CA
 curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
@@ -97,6 +97,6 @@ source ${VAULT_REPO_DIR}/config/vault/payload-auth-login.sh
 curl -s --request POST \
   --data @payload-auth-login.json  \
   ${VAULT_ADDR}/v1/auth/userpass/login/${USER} \
-  | jq -r ".auth.client_token" > .vault_token
+  | jq -r ".auth.client_token" > $HOME/.vault_token
 
-export VAULT_TOKEN=$(cat .vault_token) # NOTE: USER TOKEN
+export VAULT_TOKEN=$(cat $HOME/.vault_token) # NOTE: USER TOKEN
