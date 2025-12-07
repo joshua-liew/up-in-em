@@ -69,3 +69,34 @@ curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
 curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data '{"max_lease_ttl":"43800h"}' \
   ${VAULT_ADDR}/v1/sys/mounts/pki_int/tune
+
+
+# --------------------------------------------------------------
+# Create Policy & Generate User Token
+# --------------------------------------------------------------
+
+# Create policy
+source ${VAULT_REPO_DIR}/config/vault/payload-policy-pki.sh
+curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
+    --data @payload-policy-pki.json \
+    ${VAULT_ADDR}/v1/sys/policies/acl/pki
+
+# Enable authpass auth method
+curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
+  --data '{"type":"userpass", "description":"Userpass auth (upinem)"}' \
+  ${VAULT_ADDR}/v1/sys/auth/userpass
+openssl rand -base64 32 > $HOME/.vault_auth
+
+# Create user
+source ${VAULT_REPO_DIR}/config/vault/payload-auth-create.sh
+curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
+    --data @payload-auth-create.json \
+    ${VAULT_ADDR}/v1/auth/userpass/users/${USER}
+# Login as user
+source ${VAULT_REPO_DIR}/config/vault/payload-auth-login.sh
+curl -s --request POST \
+  --data @payload-auth-login.json  \
+  ${VAULT_ADDR}/v1/auth/userpass/login/${USER} \
+  | jq -r ".auth.client_token" > .vault_token
+
+export VAULT_TOKEN=$(cat .vault_token) # NOTE: USER TOKEN
