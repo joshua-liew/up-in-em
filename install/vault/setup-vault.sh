@@ -46,3 +46,26 @@ jq -r ".keys[]" result-init.json > .vault_unseal_key
 # Generate payload to unseal
 source ${VAULT_REPO_DIR}/config/vault/payload-unseal.sh
 curl -s --request POST --data @payload-unseal.json ${VAULT_ADDR}/v1/sys/unseal | jq
+
+
+# --------------------------------------------------------------
+# Enable PKI Secret Engine(s)
+# --------------------------------------------------------------
+
+export VAULT_TOKEN=$(cat .vault_token) # WARNING: ROOT TOKEN
+
+# PKI engine for Root CA
+curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
+   --data '{"type":"pki", "description":"Root CA (upinem)"}' \
+   ${VAULT_ADDR}/v1/sys/mounts/pki_root
+curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
+   --data '{"max_lease_ttl":"87600h"}' \
+   ${VAULT_ADDR}/v1/sys/mounts/pki_root/tune
+
+# PKI engine for Intermediate CA
+curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
+  --data '{"type":"pki", "description":"Intermediate CA (upinem)"}' \
+  ${VAULT_ADDR}/v1/sys/mounts/pki_int
+curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
+  --data '{"max_lease_ttl":"43800h"}' \
+  ${VAULT_ADDR}/v1/sys/mounts/pki_int/tune
