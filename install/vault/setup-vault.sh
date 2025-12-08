@@ -1,11 +1,13 @@
 #!/bin/bash
 
 set -e
+echo "* Setting up vault..."
 
 # --------------------------------------------------------------
 # TLS & Server Configs
 # --------------------------------------------------------------
 
+echo "* * Configuring TLS for vault..."
 sudo openssl req -x509 -newkey rsa:4096 -sha256 -days 365 \
   -nodes -keyout ${VAULT_CONFIG}/vault-key.pem -out ${VAULT_CONFIG}/vault-cert.pem \
   -subj "/CN=localhost" \
@@ -17,6 +19,7 @@ sudo chmod 640 ./vault-server.hcl
 sudo mv ./vault-server.hcl /etc/vault.d/
 sudo chown vault:vault --recursive $VAULT_CONFIG
 
+echo "* * Running vault as process with systemd..."
 # Run the Vault binary as a process with systemd
 source ${UPINEM_PATH}/config/vault/vault.service.sh >/dev/null
 sudo chmod 644 ./vault.service
@@ -36,6 +39,7 @@ export VAULT_ADDR="https://127.0.0.1:8200"
 export VAULT_CACERT=${VAULT_CONFIG}/vault-cert.pem
 export CURL_CA_BUNDLE=$VAULT_CACERT
 
+echo "* * Initializing vault..."
 # Generate payload to initialize
 source ${UPINEM_PATH}/config/vault/payload-init.sh >/dev/null
 curl -s --request POST --data @payload-init.json ${VAULT_ADDR}/v1/sys/init \
@@ -55,6 +59,7 @@ curl -s --request POST --data @payload-unseal.json \
 
 export VAULT_TOKEN=$(cat $HOME/.vault_token) # WARNING: ROOT TOKEN
 
+echo "* * Configuring vault to build CA..."
 # PKI engine for Root CA
 curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
    --data '{"type":"pki", "description":"Root CA (upinem)"}' \
@@ -76,6 +81,7 @@ curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
 # Create Policy & Generate User Token
 # --------------------------------------------------------------
 
+echo "* * Generate user to authenticate to vault..."
 # Create policy
 source ${UPINEM_PATH}/config/vault/payload-policy-pki.sh >/dev/null
 curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
