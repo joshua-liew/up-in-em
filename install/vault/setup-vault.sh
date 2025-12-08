@@ -12,13 +12,13 @@ sudo openssl req -x509 -newkey rsa:4096 -sha256 -days 365 \
   -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
 
 # Create server configuration file
-source ${UPINEM_PATH}/config/vault/vault-server.sh
+source ${UPINEM_PATH}/config/vault/vault-server.sh >/dev/null
 sudo chmod 640 ./vault-server.hcl
 sudo mv ./vault-server.hcl /etc/vault.d/
 sudo chown vault:vault --recursive $VAULT_CONFIG
 
 # Run the Vault binary as a process with systemd
-source ${UPINEM_PATH}/config/vault/vault.service.sh
+source ${UPINEM_PATH}/config/vault/vault.service.sh >/dev/null
 sudo chmod 644 ./vault.service
 sudo chown root:root ./vault.service
 sudo mv ./vault.service /etc/systemd/system/
@@ -37,15 +37,16 @@ export VAULT_CACERT=${VAULT_CONFIG}/vault-cert.pem
 export CURL_CA_BUNDLE=$VAULT_CACERT
 
 # Generate payload to initialize
-source ${UPINEM_PATH}/config/vault/payload-init.sh
-curl --request POST --data @payload-init.json ${VAULT_ADDR}/v1/sys/init \
+source ${UPINEM_PATH}/config/vault/payload-init.sh >/dev/null
+curl -s --request POST --data @payload-init.json ${VAULT_ADDR}/v1/sys/init \
   | jq > result-init.json
 jq -r ".root_token" result-init.json > $HOME/.vault_token
 jq -r ".keys[]" result-init.json > $HOME/.vault_unseal_key
 
 # Generate payload to unseal
-source ${UPINEM_PATH}/config/vault/payload-unseal.sh
-curl -s --request POST --data @payload-unseal.json ${VAULT_ADDR}/v1/sys/unseal | jq
+source ${UPINEM_PATH}/config/vault/payload-unseal.sh >/dev/null
+curl -s --request POST --data @payload-unseal.json \
+  ${VAULT_ADDR}/v1/sys/unseal >/dev/null
 
 
 # --------------------------------------------------------------
@@ -76,7 +77,7 @@ curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
 # --------------------------------------------------------------
 
 # Create policy
-source ${UPINEM_PATH}/config/vault/payload-policy-pki.sh
+source ${UPINEM_PATH}/config/vault/payload-policy-pki.sh >/dev/null
 curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
     --data @payload-policy-pki.json \
     ${VAULT_ADDR}/v1/sys/policies/acl/pki
@@ -88,12 +89,12 @@ curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
 openssl rand -base64 32 > $HOME/.vault_auth
 
 # Create user
-source ${UPINEM_PATH}/config/vault/payload-auth-create.sh
+source ${UPINEM_PATH}/config/vault/payload-auth-create.sh >/dev/null
 curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
     --data @payload-auth-create.json \
     ${VAULT_ADDR}/v1/auth/userpass/users/${USER}
 # Login as user
-source ${UPINEM_PATH}/config/vault/payload-auth-login.sh
+source ${UPINEM_PATH}/config/vault/payload-auth-login.sh >/dev/null
 curl -s --request POST \
   --data @payload-auth-login.json  \
   ${VAULT_ADDR}/v1/auth/userpass/login/${USER} \
