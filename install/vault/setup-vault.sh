@@ -27,7 +27,7 @@ sudo chown root:root ./vault.service
 sudo mv ./vault.service /etc/systemd/system/
 # Reference: https://developer.hashicorp.com/vault/docs/deploy/run-as-service
 sudo systemctl daemon-reload
-sudo systemctl enable vault.service
+sudo systemctl enable vault.service >/dev/null
 sudo systemctl start vault.service
 
 
