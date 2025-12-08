@@ -1,3 +1,6 @@
+#!/bin/bash
+
+tee payload-gen-root-ca.json <<EOF
 {
   "common_name": "Upinem AOU",
   "issuer_name": "root-ca",
@@ -10,3 +13,4 @@
   "key_bits": 4096,
   "key_type": "rsa"
 }
+EOF

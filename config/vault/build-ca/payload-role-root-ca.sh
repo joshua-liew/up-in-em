@@ -1,3 +1,6 @@
+#!/bin/bash
+
+tee payload-role-root-ca.json <<EOF
 {
   "allow_any_name": true,
   "issuer_ref": "root-ca",
@@ -8,3 +11,4 @@
   "province": "Aomori-ken",
   "locality": "Aomori-shi"
 }
+EOF

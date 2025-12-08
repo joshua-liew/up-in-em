@@ -1,3 +1,6 @@
+#!/bin/bash
+
+tee payload-role-client.json <<EOF
 {
   "issuer_ref": "default",
   "max_ttl": "26280h",
@@ -19,3 +22,4 @@
   "province": "Aomori-ken",
   "locality": "Aomori-shi"
 }
+EOF
