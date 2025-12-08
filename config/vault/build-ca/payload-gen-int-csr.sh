@@ -1,0 +1,13 @@
+#!/bin/bash
+
+tee payload-gen-int-csr.json <<EOF
+{
+  "common_name": "Upinem AOU Intermediate CA",
+  "organization": "Aomori University",
+  "country": "JP",
+  "province": "Aomori-ken",
+  "locality": "Aomori-shi",
+  "key_bits": 4096,
+  "key_type": "rsa"
+}
+EOF
