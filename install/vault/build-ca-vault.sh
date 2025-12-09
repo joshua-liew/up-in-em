@@ -67,7 +67,7 @@ curl -s -H "X-Vault-Token: $VAULT_TOKEN" --request POST \
 # --------------------------------------------------------------
 
 # Create server role
-source ${UPINEM_PATH}/config/vault/build-ca/payload-url-int-ca.sh >/dev/null
+source ${UPINEM_PATH}/config/vault/build-ca/payload-role-server.sh >/dev/null
 curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-role-server.json \
   $VAULT_ADDR/v1/pki_int/roles/eap-tls-server \
@@ -97,4 +97,25 @@ jq -r '.data.ca_chain[]' result-server-cert.json > ca.pem
 # Generate Client Certificates
 # --------------------------------------------------------------
 
+# Create client role
+source ${UPINEM_PATH}/config/vault/build-ca/payload-role-client.sh >/dev/null
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
+  --data @payload-role-client.json \
+  $VAULT_ADDR/v1/pki_int/roles/eap-tls-client \
+  | jq
 
+# Issue test (client) credentials
+source ${UPINEM_PATH}/config/vault/build-ca/payload-gen-test-client.sh >/dev/null
+curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
+  --data @payload-gen-test-client.json \
+  $VAULT_ADDR/v1/pki_int/issue/eap-tls-client \
+  | jq > result-test-client.json
+jq -r '.data.private_key' result-test-client.json > test-client.key
+jq -r '.data.certificate' result-test-client.json > test-client.pem
+# Create eapol test suite
+source ${UPINEM_PATH}/config/vault/build-ca/test-client-eapol.sh >/dev/null
+mkdir -p /tmp/certs/clients/
+sudo cp -p ./test-client-eapol.conf /tmp/
+sudo cp -p ./test-client.key /tmp/certs/clients/
+sudo cp -p ./test-client.pem /tmp/certs/clients/
+sudo cp -p ./ca.pem /tmp/certs/
