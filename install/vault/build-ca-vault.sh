@@ -13,7 +13,7 @@ export CURL_CA_BUNDLE=$VAULT_CACERT
 
 # Generate root certificate
 source ${UPINEM_PATH}/config/vault/build-ca/payload-gen-root-ca.sh >/dev/null
-curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-gen-root-ca.json \
   ${VAULT_ADDR}/v1/pki_root/root/generate/internal \
   | jq -r ".data.certificate" > root_ca.pem
@@ -22,13 +22,14 @@ curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
 source ${UPINEM_PATH}/config/vault/build-ca/payload-role-root-ca.sh >/dev/null
 curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-role-root-ca.json \
-  ${VAULT_ADDR}/v1/pki_root/roles/root-ca-role
+  ${VAULT_ADDR}/v1/pki_root/roles/root-ca-role >/dev/null
+
 
 # Configure URLs for root CA
 source ${UPINEM_PATH}/config/vault/build-ca/payload-url-root-ca.sh >/dev/null
-curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-url-root-ca.json \
-  ${VAULT_ADDR}/v1/pki_root/config/urls
+  ${VAULT_ADDR}/v1/pki_root/config/urls >/dev/null
 
 
 # --------------------------------------------------------------
@@ -53,13 +54,13 @@ curl --silent --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
 source ${UPINEM_PATH}/config/vault/build-ca/payload-signed.sh >/dev/null
 curl --silent --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-signed.json \
-  ${VAULT_ADDR}/v1/pki_int/intermediate/set-signed
+  ${VAULT_ADDR}/v1/pki_int/intermediate/set-signed >/dev/null
 
 # Configure URLs for int CA
 source ${UPINEM_PATH}/config/vault/build-ca/payload-url-int-ca.sh >/dev/null
 curl -s -H "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-url-int-ca.json \
-  ${VAULT_ADDR}/v1/pki_int/config/urls
+  ${VAULT_ADDR}/v1/pki_int/config/urls >/dev/null
 
 
 # --------------------------------------------------------------
@@ -70,8 +71,7 @@ curl -s -H "X-Vault-Token: $VAULT_TOKEN" --request POST \
 source ${UPINEM_PATH}/config/vault/build-ca/payload-role-server.sh >/dev/null
 curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-role-server.json \
-  ${VAULT_ADDR}/v1/pki_int/roles/eap-tls-server \
-  | jq
+  ${VAULT_ADDR}/v1/pki_int/roles/eap-tls-server > /dev/null
 
 # Issue server cert
 source ${UPINEM_PATH}/config/vault/build-ca/payload-gen-server.sh >/dev/null
@@ -101,8 +101,7 @@ jq -r '.data.ca_chain[]' result-server-cert.json > ca.pem
 source ${UPINEM_PATH}/config/vault/build-ca/payload-role-client.sh >/dev/null
 curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-role-client.json \
-  ${VAULT_ADDR}/v1/pki_int/roles/eap-tls-client \
-  | jq
+  ${VAULT_ADDR}/v1/pki_int/roles/eap-tls-client >/dev/null
 
 # Issue test (client) credentials
 source ${UPINEM_PATH}/config/vault/build-ca/payload-gen-test-client.sh >/dev/null
