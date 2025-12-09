@@ -66,6 +66,32 @@ curl -s -H "X-Vault-Token: $VAULT_TOKEN" --request POST \
 # Generate Server Certificates
 # --------------------------------------------------------------
 
+# Create server role
+source ${UPINEM_PATH}/config/vault/build-ca/payload-url-int-ca.sh >/dev/null
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
+  --data @payload-role-server.json \
+  $VAULT_ADDR/v1/pki_int/roles/eap-tls-server \
+  | jq
+
+# Issue server cert
+source ${UPINEM_PATH}/config/vault/build-ca/payload-gen-server.sh >/dev/null
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
+  --data @payload-gen-server.json \
+  $VAULT_ADDR/v1/pki_int/issue/eap-tls-server \
+  | jq > result-server-cert.json
+
+# Extract private key, cert, & ca chain
+jq -r '.data.private_key' result-server-cert.json > server.key
+jq -r '.data.certificate' result-server-cert.json \
+| grep -E 'BEGIN CERTIFICATE|END CERTIFICATE|' \
+| awk '
+    BEGIN {cert_found=0}
+    /BEGIN CERTIFICATE/ { cert_found=1; print; next }
+    cert_found { print }
+    /END CERTIFICATE/ { exit }
+' > server.pem
+jq -r '.data.ca_chain[]' result-server-cert.json > ca.pem
+
 
 # --------------------------------------------------------------
 # Generate Client Certificates
