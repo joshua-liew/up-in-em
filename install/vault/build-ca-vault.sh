@@ -119,3 +119,9 @@ sudo cp -p ./test-client-eapol.conf /tmp/
 sudo cp -p ./test-client.key /tmp/certs/clients/
 sudo cp -p ./test-client.pem /tmp/certs/clients/
 sudo cp -p ./ca.pem /tmp/certs/
+
+
+# --------------------------------------------------------------
+# TODO: Port necessary parts into FreeRADIUS
+# --------------------------------------------------------------
+
