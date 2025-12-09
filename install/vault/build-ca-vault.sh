@@ -11,6 +11,7 @@ export CURL_CA_BUNDLE=$VAULT_CACERT
 # Generate Root CA
 # --------------------------------------------------------------
 
+echo "* * Generating root ca in vault..."
 # Generate root certificate
 source ${UPINEM_PATH}/config/vault/build-ca/payload-gen-root-ca.sh >/dev/null
 curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
@@ -36,6 +37,7 @@ curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
 # Generate Intermediate CA
 # --------------------------------------------------------------
 
+echo "* * Generating intermediate ca in vault..."
 # Generate CSR for int CA
 source ${UPINEM_PATH}/config/vault/build-ca/payload-gen-int-csr.sh >/dev/null
 curl -s -H "X-Vault-Token: $VAULT_TOKEN" --request POST \
@@ -67,6 +69,7 @@ curl -s -H "X-Vault-Token: $VAULT_TOKEN" --request POST \
 # Generate Server Certificates
 # --------------------------------------------------------------
 
+echo "* * Generating server certificate in vault..."
 # Create server role
 source ${UPINEM_PATH}/config/vault/build-ca/payload-role-server.sh >/dev/null
 curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
@@ -97,6 +100,7 @@ jq -r '.data.ca_chain[]' result-server-cert.json > ca.pem
 # Generate Client Certificates
 # --------------------------------------------------------------
 
+echo "* * Generating client certificate(s) in vault..."
 # Create client role
 source ${UPINEM_PATH}/config/vault/build-ca/payload-role-client.sh >/dev/null
 curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
