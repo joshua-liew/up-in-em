@@ -27,7 +27,7 @@ curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
 # Configure URLs for root CA
 source ${UPINEM_PATH}/config/vault/build-ca/payload-url-root-ca.sh >/dev/null
 curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
-  --data @payload-url-ca.json \
+  --data @payload-url-root-ca.json \
   $VAULT_ADDR/v1/pki_root/config/urls
 
 
