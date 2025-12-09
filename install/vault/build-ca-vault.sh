@@ -35,6 +35,32 @@ curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
 # Generate Intermediate CA
 # --------------------------------------------------------------
 
+# Generate CSR for int CA
+source ${UPINEM_PATH}/config/vault/build-ca/payload-gen-int-csr.sh >/dev/null
+curl -s -H "X-Vault-Token: $VAULT_TOKEN" --request POST \
+  --data @payload-gen-int-csr.json \
+  $VAULT_ADDR/v1/pki_int/intermediate/generate/internal \
+  | jq -c '.data | .csr' > pki_intermediate.csr
+
+# Sign the int CA's CSR with the root CA
+source ${UPINEM_PATH}/config/vault/build-ca/payload-gen-int-ca.sh >/dev/null
+curl --silent --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
+  --data @payload-gen-int-ca.json \
+  $VAULT_ADDR/v1/pki_root/issuer/root-ca/sign-intermediate \
+  | jq '.data | .certificate' > intermediate.cert.pem
+
+# Import int CA cert
+source ${UPINEM_PATH}/config/vault/build-ca/payload-signed.sh >/dev/null
+curl --silent --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
+  --data @payload-signed.json \
+  $VAULT_ADDR/v1/pki_int/intermediate/set-signed
+
+# Configure URLs for int CA
+source ${UPINEM_PATH}/config/vault/build-ca/payload-url-int-ca.sh >/dev/null
+curl -s -H "X-Vault-Token: $VAULT_TOKEN" --request POST \
+  --data @payload-url-int-ca.json \
+  $VAULT_ADDR/v1/pki_int/config/urls
+
 
 # --------------------------------------------------------------
 # Generate Server Certificates
