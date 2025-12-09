@@ -109,7 +109,7 @@ curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
 
 # Issue test (client) credentials
 source ${UPINEM_PATH}/config/vault/build-ca/payload-gen-test-client.sh >/dev/null
-curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
+curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-gen-test-client.json \
   ${VAULT_ADDR}/v1/pki_int/issue/eap-tls-client \
   | jq > result-test-client.json
