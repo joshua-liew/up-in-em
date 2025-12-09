@@ -15,20 +15,20 @@ export CURL_CA_BUNDLE=$VAULT_CACERT
 source ${UPINEM_PATH}/config/vault/build-ca/payload-gen-root-ca.sh >/dev/null
 curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-gen-root-ca.json \
-  $VAULT_ADDR/v1/pki_root/root/generate/internal \
+  ${VAULT_ADDR}/v1/pki_root/root/generate/internal \
   | jq -r ".data.certificate" > root_ca.pem
 
 # Create root CA role
 source ${UPINEM_PATH}/config/vault/build-ca/payload-role-root-ca.sh >/dev/null
 curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-role-root-ca.json \
-  $VAULT_ADDR/v1/pki_root/roles/root-ca-role
+  ${VAULT_ADDR}/v1/pki_root/roles/root-ca-role
 
 # Configure URLs for root CA
 source ${UPINEM_PATH}/config/vault/build-ca/payload-url-root-ca.sh >/dev/null
 curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-url-root-ca.json \
-  $VAULT_ADDR/v1/pki_root/config/urls
+  ${VAULT_ADDR}/v1/pki_root/config/urls
 
 
 # --------------------------------------------------------------
@@ -39,27 +39,27 @@ curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
 source ${UPINEM_PATH}/config/vault/build-ca/payload-gen-int-csr.sh >/dev/null
 curl -s -H "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-gen-int-csr.json \
-  $VAULT_ADDR/v1/pki_int/intermediate/generate/internal \
+  ${VAULT_ADDR}/v1/pki_int/intermediate/generate/internal \
   | jq -c '.data | .csr' > pki_intermediate.csr
 
 # Sign the int CA's CSR with the root CA
 source ${UPINEM_PATH}/config/vault/build-ca/payload-gen-int-ca.sh >/dev/null
 curl --silent --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-gen-int-ca.json \
-  $VAULT_ADDR/v1/pki_root/issuer/root-ca/sign-intermediate \
+  ${VAULT_ADDR}/v1/pki_root/issuer/root-ca/sign-intermediate \
   | jq '.data | .certificate' > intermediate.cert.pem
 
 # Import int CA cert
 source ${UPINEM_PATH}/config/vault/build-ca/payload-signed.sh >/dev/null
 curl --silent --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-signed.json \
-  $VAULT_ADDR/v1/pki_int/intermediate/set-signed
+  ${VAULT_ADDR}/v1/pki_int/intermediate/set-signed
 
 # Configure URLs for int CA
 source ${UPINEM_PATH}/config/vault/build-ca/payload-url-int-ca.sh >/dev/null
 curl -s -H "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-url-int-ca.json \
-  $VAULT_ADDR/v1/pki_int/config/urls
+  ${VAULT_ADDR}/v1/pki_int/config/urls
 
 
 # --------------------------------------------------------------
@@ -70,14 +70,14 @@ curl -s -H "X-Vault-Token: $VAULT_TOKEN" --request POST \
 source ${UPINEM_PATH}/config/vault/build-ca/payload-role-server.sh >/dev/null
 curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-role-server.json \
-  $VAULT_ADDR/v1/pki_int/roles/eap-tls-server \
+  ${VAULT_ADDR}/v1/pki_int/roles/eap-tls-server \
   | jq
 
 # Issue server cert
 source ${UPINEM_PATH}/config/vault/build-ca/payload-gen-server.sh >/dev/null
 curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-gen-server.json \
-  $VAULT_ADDR/v1/pki_int/issue/eap-tls-server \
+  ${VAULT_ADDR}/v1/pki_int/issue/eap-tls-server \
   | jq > result-server-cert.json
 
 # Extract private key, cert, & ca chain
@@ -101,14 +101,14 @@ jq -r '.data.ca_chain[]' result-server-cert.json > ca.pem
 source ${UPINEM_PATH}/config/vault/build-ca/payload-role-client.sh >/dev/null
 curl -s --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-role-client.json \
-  $VAULT_ADDR/v1/pki_int/roles/eap-tls-client \
+  ${VAULT_ADDR}/v1/pki_int/roles/eap-tls-client \
   | jq
 
 # Issue test (client) credentials
 source ${UPINEM_PATH}/config/vault/build-ca/payload-gen-test-client.sh >/dev/null
 curl --header "X-Vault-Token: $VAULT_TOKEN" --request POST \
   --data @payload-gen-test-client.json \
-  $VAULT_ADDR/v1/pki_int/issue/eap-tls-client \
+  ${VAULT_ADDR}/v1/pki_int/issue/eap-tls-client \
   | jq > result-test-client.json
 jq -r '.data.private_key' result-test-client.json > test-client.key
 jq -r '.data.certificate' result-test-client.json > test-client.pem
