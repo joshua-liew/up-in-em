@@ -1,0 +1,103 @@
+#!/bin/bash
+
+tee default <<'EOF'
+server default {
+listen {
+        type = auth
+        ipaddr = *
+        port = 0
+        limit {
+              max_connections = 16
+              lifetime = 0
+              idle_timeout = 900
+        }
+}
+listen {
+        ipaddr = *
+        port = 0
+        type = acct
+        limit {
+        }
+}
+listen {
+        type = auth
+        ipv6addr = ::   # any.  ::1 == localhost
+        port = 0
+        limit {
+              max_connections = 16
+              lifetime = 0
+              idle_timeout = 30
+        }
+}
+listen {
+        ipv6addr = ::
+        port = 0
+        type = acct
+        limit {
+        }
+}
+authorize {
+        filter_username
+        preprocess
+        suffix
+        eap {
+                ok = return
+        }
+        files
+        -sql
+        -ldap
+        expiration
+        logintime
+        Autz-Type New-TLS-Connection {
+                  ok
+        }
+}
+authenticate {
+        eap
+}
+preacct {
+        preprocess
+        acct_unique
+        suffix
+        files
+}
+accounting {
+        detail
+        -sql
+        attr_filter.accounting_response
+}
+session {
+}
+post-auth {
+        if (session-state:User-Name && reply:User-Name && request:User-Name && (reply:User-Name == request:User-Name)) {
+                update reply {
+                        &User-Name !* ANY
+                }
+        }
+        update {
+                &reply: += &session-state:
+        }
+        -sql
+        remove_reply_message_if_eap
+        Post-Auth-Type REJECT {
+                -sql
+                attr_filter.access_reject
+                eap
+                remove_reply_message_if_eap
+        }
+        Post-Auth-Type Challenge {
+        }
+        Post-Auth-Type Client-Lost {
+        }
+        if (EAP-Key-Name && &reply:EAP-Session-Id) {
+                update reply {
+                        &EAP-Key-Name := &reply:EAP-Session-Id
+                }
+        }
+}
+pre-proxy {
+}
+post-proxy {
+}
+}
+EOF
