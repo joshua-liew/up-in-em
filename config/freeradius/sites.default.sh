@@ -39,6 +39,7 @@ listen {
 authorize {
         filter_username
         preprocess
+        operator-name
         suffix
         eap {
                 ok = return
