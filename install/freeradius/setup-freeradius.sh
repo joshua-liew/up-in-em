@@ -26,7 +26,7 @@ sudo rm -rf ${FRAD_CONFIG_DIR}/certs/*
 source ${UPINEM_PATH}/config/freeradius/upinem.radiusd.conf.sh >/dev/null
 source ${UPINEM_PATH}/config/freeradius/upinem.proxy.conf.sh >/dev/null
 source ${UPINEM_PATH}/config/freeradius/upinem.clients.conf.sh >/dev/null
-source ${UPINEM_PATH}/config/freeradius/mods.eap.sh >/dev/null
+source ${UPINEM_PATH}/config/freeradius/mods.eap-tls.sh >/dev/null
 source ${UPINEM_PATH}/config/freeradius/sites.eduroam.sh >/dev/null
 
 
@@ -38,13 +38,13 @@ source ${UPINEM_PATH}/config/freeradius/sites.eduroam.sh >/dev/null
 sudo cp radiusd.conf $FRAD_CONFIG_DIR
 sudo cp proxy.conf $FRAD_CONFIG_DIR
 sudo cp clients.conf $FRAD_CONFIG_DIR
-sudo cp eap ${FRAD_CONFIG_DIR}/mods-available
+sudo cp eap-tls ${FRAD_CONFIG_DIR}/mods-available
 sudo cp eduroam ${FRAD_CONFIG_DIR}/sites-available
 # Set privileges
 sudo chmod 640 ${FRAD_CONFIG_DIR}/radiusd.conf
 sudo chmod 640 ${FRAD_CONFIG_DIR}/proxy.conf
 sudo chmod 640 ${FRAD_CONFIG_DIR}/clients.conf
-sudo chmod 640 ${FRAD_CONFIG_DIR}/mods-available/eap
+sudo chmod 640 ${FRAD_CONFIG_DIR}/mods-available/eap-tls
 sudo chmod 640 ${FRAD_CONFIG_DIR}/sites-available/eduroam
 
 # Enable modules
