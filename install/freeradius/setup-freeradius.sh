@@ -42,12 +42,21 @@ sudo cp proxy.conf $FRAD_CONFIG_DIR
 sudo cp clients.conf $FRAD_CONFIG_DIR
 sudo cp eap-tls ${FRAD_CONFIG_DIR}/mods-available
 sudo cp eduroam ${FRAD_CONFIG_DIR}/sites-available
+## -------------------------------------------------------------
+## Import Server Certificates
+## -------------------------------------------------------------
+sudo cp server.key ${FRAD_CONFIG_DIR}/certs
+sudo cp server.pem ${FRAD_CONFIG_DIR}/certs
+sudo cp ca.pem ${FRAD_CONFIG_DIR}/certs
+
 # Set privileges
 sudo chmod 640 ${FRAD_CONFIG_DIR}/radiusd.conf
 sudo chmod 640 ${FRAD_CONFIG_DIR}/proxy.conf
 sudo chmod 640 ${FRAD_CONFIG_DIR}/clients.conf
-sudo chmod 640 ${FRAD_CONFIG_DIR}/mods-available/eap-tls
-sudo chmod 640 ${FRAD_CONFIG_DIR}/sites-available/eduroam
+sudo chmod 640 -R ${FRAD_CONFIG_DIR}/mods-available
+sudo chmod 640 -R ${FRAD_CONFIG_DIR}/sites-available
+sudo chmod 644 -R ${FRAD_CONFIG_DIR}/certs
+sudo chmod 600 ${FRAD_CONFIG_DIR}/certs/server.key
 
 # Enable modules
 source ${UPINEM_PATH}/config/freeradius/mods.txt.sh >/dev/null
