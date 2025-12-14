@@ -23,6 +23,7 @@ sudo rm -rf ${FRAD_CONFIG_DIR}/certs/*
 # Generate Config(s)
 # --------------------------------------------------------------
 
+echo "* * Configuring freeradius..."
 source ${UPINEM_PATH}/config/freeradius/upinem.radiusd.conf.sh >/dev/null
 source ${UPINEM_PATH}/config/freeradius/upinem.proxy.conf.sh >/dev/null
 source ${UPINEM_PATH}/config/freeradius/upinem.clients.conf.sh >/dev/null
@@ -34,6 +35,7 @@ source ${UPINEM_PATH}/config/freeradius/sites.eduroam.sh >/dev/null
 # Setup Configs
 # --------------------------------------------------------------
 
+echo "* * Setting permissions & privileges for freeradius..."
 # Move configs
 sudo cp radiusd.conf $FRAD_CONFIG_DIR
 sudo cp proxy.conf $FRAD_CONFIG_DIR
