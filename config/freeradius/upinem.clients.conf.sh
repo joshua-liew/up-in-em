@@ -1,0 +1,19 @@
+#!/bin/bash
+
+tee clients.conf <<'EOF'
+client localhost {
+        ipaddr = 127.0.0.1
+        proto = *
+        secret = testing123
+        nas_type         = other
+        limit {
+                max_connections = 16
+                lifetime = 0
+                idle_timeout = 900
+        }
+}
+client localhost_ipv6 {
+        ipv6addr        = ::1
+        secret          = testing123
+}
+EOF
