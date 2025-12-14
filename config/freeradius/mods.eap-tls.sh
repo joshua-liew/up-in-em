@@ -1,6 +1,6 @@
 #!/bin/bash
 
-tee eap <<'EOF'
+tee eap-tls <<'EOF'
 eap {
     default_eap_type = tls
     timer_expire = 60
