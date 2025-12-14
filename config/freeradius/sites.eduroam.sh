@@ -1,6 +1,6 @@
 #!/bin/bash
 
-tee default <<'EOF'
+tee eduroam <<'EOF'
 server default {
 listen {
     type = auth
