@@ -26,7 +26,8 @@ source ${INSTALL_DIR}/freeradius/install-freeradius.sh
 # --------------------------------------------------------------
 source ${INSTALL_DIR}/vault/_config-vault.sh
 source ${INSTALL_DIR}/vault/install-vault.sh
-
+source ${INSTALL_DIR}/vault/setup-vault.sh
+source ${INSTALL_DIR}/vault/build-ca-vault.sh
 
 
 # TODO: install CLI tool
