@@ -15,19 +15,24 @@ source ${INSTALL_DIR}/_requirements.sh
 
 
 # --------------------------------------------------------------
-# Vault installation script(s)
-# --------------------------------------------------------------
-source ${INSTALL_DIR}/vault/_config-vault.sh
-source ${INSTALL_DIR}/vault/install-vault.sh
-source ${INSTALL_DIR}/vault/setup-vault.sh
-source ${INSTALL_DIR}/vault/build-ca-vault.sh
-
-
-# --------------------------------------------------------------
 # Freeradius installation script(s)
 # --------------------------------------------------------------
 source ${INSTALL_DIR}/freeradius/_config-freeradius.sh
 source ${INSTALL_DIR}/freeradius/install-freeradius.sh
+
+
+# --------------------------------------------------------------
+# Vault installation script(s)
+# --------------------------------------------------------------
+source ${INSTALL_DIR}/vault/_config-vault.sh
+source ${INSTALL_DIR}/vault/install-vault.sh
+
+
+# --------------------------------------------------------------
+# Setup script(s)
+# --------------------------------------------------------------
+source ${INSTALL_DIR}/vault/setup-vault.sh
+source ${INSTALL_DIR}/vault/build-ca-vault.sh
 source ${INSTALL_DIR}/freeradius/setup-freeradius.sh
 
 
